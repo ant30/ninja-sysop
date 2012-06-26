@@ -1,0 +1,55 @@
+<div metal:use-macro="view.global_template">
+
+    <title metal:fill-slot="title" tal:omit-tag="">${groupname} - </title>
+
+    <metal metal:fill-slot="breadcrumb" tal:omit-tag="">
+        <li class="active">${groupname}</li>
+    </metal>
+
+    <div metal:fill-slot="content">
+    <h2>${groupname}</h2>
+
+    <div class="well btn-toolbar">
+        <a class="btn" href="/${groupname}/applychanges">Apply Changes</a>
+        <a class="btn" href="/${groupname}/add">Add ${texts.item_label}</a>
+
+        <div class="paginator pull-right"
+            tal:content='structure python:entries.pager(curpage_attr={"class":"btn primary btn-small disabled"},\
+                                                    dotdot_attr={"class":"btn btn-small disabled"},\
+                                                    link_attr={"class":"btn btn-small"})'>
+        </div>
+
+        <div class="searcher pull-left">
+            <form class="form-search" href=".">
+                <input type="search" name="search" class="input-medium" placeholder="Search"/>
+            </form>
+        </div>
+
+    </div>
+
+    <table class="table table-condensed">
+        <thead>
+            <tr>
+                <th>Actions</th>
+                <th>Name</th>
+                <th tal:repeat="(label, field) texts.item_list_extra_fields" tal:content="label"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr tal:repeat="entry entries">
+             <td>
+                 <i alt="Protected" class="icon-lock" tal:condition="entry.protected"></i>
+                 <a tal:condition="not:entry.protected" href="/${groupname}/${entry.item.name}/delete">
+                     <i alt="Delete" class="icon-remove"></i></a>
+                 <a tal:condition="not:entry.protected" href="/${groupname}/${entry.item.name}">
+                     <i alt="Edit" class="icon-edit"></i></a>
+             </td>
+             <td><a href="/${groupname}/${entry.item.name}">${entry.item.name}</a></td>
+             <td tal:repeat="(label, field) texts.item_list_extra_fields">
+                 ${getattr(entry.item, label)}
+             </td>
+           </tr>
+       </tbody>
+    </table>
+    </div>
+</div>

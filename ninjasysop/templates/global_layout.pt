@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      tal:define="deform_bootstrap_static python:request.static_url('deform_bootstrap:static/');
+                  deform_static python:request.static_url('deform:static/');
+                  app_static python:request.static_url('ninjasysop:static/')">
+
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><i tal:omit-tag="" metal:define-slot="title"></i>${texts.subapp_label} - Ninja Sysop</title>
+    <link rel="shortcut icon" href="${app_static}favicon.ico" />
+
+    <link rel="stylesheet" href="${app_static}bootstrap.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="${app_static}bootstrap-responsive.css" type="text/css" charset="utf-8" media="screen"/>
+    <script src="${deform_bootstrap_static}jquery-1.7.1.min.js" type="text/javascript"></script>
+    <script src="${deform_bootstrap_static}bootstrap.min.js" type="text/javascript"></script>
+
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+        <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <metal:block tal:omit-tag="" metal:define-slot="extrastatic">
+    </metal:block>
+
+
+</head>
+<body>
+<header>
+<div class="navbar">
+  <div class="navbar-inner">
+    <div class="container">
+        <a class="brand" href="/">${texts.subapp_label}</a>
+        <div class="nav-collapse">
+            <ul class="nav">
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+  </div>
+</div>
+</header>
+
+<ul class="breadcrumb">
+    <li><a href="/">Home</a> <span class="divider">/</span></li>
+    <metal tal:omit-tag="" metal:define-slot="breadcrumb">
+    </metal>
+</ul>
+
+<div class="container-fluid">
+    <div metal:define-slot="content" tal:omit-tag="">
+        <p>CONTENT BLOCK</p>
+    </div>
+</div>
+<footer>
+<span> Provide by <a href="https://github.com/ant30/ninja-sysop">Ninja Sysop</a></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<div metal:use-macro="view.global_template">
+    <div metal:fill-slot="content">
+        <h2>${texts.subapp_label}</h2>
+        <ul>
+            <li tal:repeat="group groups">
+                <h3><a href="/${group}">${group}</a></h3>
+            </li>
+        </ul>
+    </div>
+</div>
