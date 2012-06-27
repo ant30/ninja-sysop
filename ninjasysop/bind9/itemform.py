@@ -3,13 +3,15 @@ import re
 import colander
 import deform
 
+from ninjasysop.validators import ip_validator
+
 recordtype_choices = (
     ('CNAME', 'CNAME'),
     ('A', 'A'),
 )
 
-RE_IP = r"^(?:\d{1,3}\.){3}(?:\d{1,3})$"
 RE_NAME =  r"^[\w.]+[^.]$"
+RE_IP = r"^(?:\d{1,3}\.){3}(?:\d{1,3})$"
 
 
 class ItemForm(colander.MappingSchema):

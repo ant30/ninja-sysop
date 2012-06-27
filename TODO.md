@@ -15,12 +15,8 @@ DNS
 DHCPD
 -----
 
-1. [X] Serial Increment on apply changes
-1. [X] Change CNAME / A type
-1. [X] Pyramid Scaffolds starter
-1. [ ] Error Handler
 1. [X] Simple Validators (valid IP, valid MAC...)
-1. [X] Consistant file generation (IP in valid header range)
+1. [ ] Consistant file generation (IP in valid header range)
 
 
 Ninja SysOP
@@ -39,3 +35,5 @@ Ninja SysOP
 1. [ ] LDAP login backend
 1. [ ] SAML login backend
 1. [ ] Generic Interface to allow multiple backend enabled
+1. [ ] temporary file before apply
+1. [ ] revisions for every apply changes
