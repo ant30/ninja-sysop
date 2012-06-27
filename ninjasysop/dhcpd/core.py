@@ -38,39 +38,53 @@ class GroupFile(object):
 
     def readfile(self):
         serial = ''
-        names = {}
+        items = {}
         with open(self.filename, 'r') as groupfile:
             content = groupfile.read()
-            partition = PARSER_RE['partition'].search(content)
+            partition = PARSER_RE['partition'].search(content.replace("\n",""))
             if not partition:
                 raise IOError("Bad File Format")
-            (header, hosts) = parition.groups()
+            (header, hosts) = partition.groups()
             parsed_hosts = PARSER_RE['hosts'].findall(hosts)
             for (name, mac, ip) in parsed_hosts:
                 item = Item(name, mac, ip)
-                items[name] = Item
+                items[name] = item
 
-        return  items
+        return items
 
     def __str_item(self, item):
         itemstr = ''
         if item.comment:
             itemstr = "#{0}\n".format(item.comment)
 
-        itemstr += "host {name} \{\n hardware ethernet {mac};\n fixed-address {ip}\n}".format(
+        itemstr += "host {name} {{\n hardware ethernet {mac};\n fixed-address {ip};\n}}\n".format(
                                     name=item.name, mac=item.mac, ip=item.ip)
 
         return itemstr
 
-    def save_item(self, item, old_item):
+
+    def add_item(self, item):
 
         with open(self.filename, 'r') as filecontent:
 
+            item_str = self.__str_item(item)
+            content = filecontent.read()
+            content = content + item_str
+
+        with open(self.filename, 'w') as filecontent:
+            filecontent.write(content)
+
+
+    def save_item(self, old_item, item):
+
+        with open(self.filename, 'r') as filecontent:
+
+            item_str = self.__str_item(item)
             content = filecontent.read()
             content_1 = re.sub(r"host %s [^\{]*{.*[^\}]*} *\n" % (old_item.name),
-                    self.__str_item(item), content)
+                    item_str, content)
             if content == content_1:
-                raise KeyError("host %s not found" % old_item.name)
+                raise KeyError("host %s not found" % item.name)
             else:
                 content = content_1
 
@@ -82,7 +96,7 @@ class GroupFile(object):
 
             content = filecontent.read()
             content_1 = re.sub(r"host %s [^\{]*{.*[^\}]*} *\n" % (item.name),
-                    self.__str_item(item), content)
+                               "", content)
             if content == content_1:
                 raise KeyError("host %s not found" % item.name)
             else:
@@ -106,7 +120,7 @@ class Group(object):
         self.groupfile.remove_item(self.items[name])
         del self.items[name]
 
-    def get_item(self, ip):
+    def get_item(self, name):
         return self.items[name]
 
     def get_items(self, mac=None, ip=None, name=None,
@@ -145,8 +159,18 @@ class Group(object):
                     ip=ip,
                     comment=comment)
 
-        self.groupfile.save_record(item)
+        self.groupfile.add_item(item)
         self.items[str(item)] = item
+
+
+    def save_item(self, old_item, name="", mac="", ip="", comment=""):
+        item = Item(name=name,
+                    mac=mac,
+                    ip=ip,
+                    comment=comment)
+
+        self.groupfile.save_item(old_item, item)
+        self.items[str(old_item)] = item
 
     def group_reload(self, cmd=RELOAD_COMMAND):
         try:

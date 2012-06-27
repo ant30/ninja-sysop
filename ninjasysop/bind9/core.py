@@ -73,9 +73,17 @@ class GroupFile(object):
     def __str_serial(self, serial):
         return "%s ;serial aaaammdd\n" % serial
 
-    def save_record(self, record):
-        match = re.compile(MATCH_RE_STR['record'].format(name=record.name,
-                                                         rtype=record.type))
+    def add_record(self, record):
+        with open(self.filename, 'r') as zonefile:
+            lines = zonefile.readlines()
+            lines.append(self.__str_record(record))
+
+        with open(self.filename, 'w') as zonefile:
+            zonefile.writelines(lines)
+
+    def save_record(self, old_record, record):
+        match = re.compile(MATCH_RE_STR['record'].format(name=old_record.name,
+                                                         rtype=old_record.type))
         zonefile = open(self.filename, 'r')
         lines = zonefile.readlines()
         zonefile.close()
@@ -84,7 +92,7 @@ class GroupFile(object):
             n += 1
 
         if n == len(lines):
-            lines.append(self.__str_record(record))
+            raise(KeyError, "Record %s not found" % record.name)
         else:
             lines[n] = self.__str_record(record)
 
@@ -199,6 +207,24 @@ class Group(object):
                         weight=weight)
 
         self.groupfile.save_record(record)
+        self.items[str(record)] = record
+
+
+    def save_item(self, old_record, name="", type="", target="", comment="", weight=0):
+        if name.endswith(self.groupname):
+            entry = name.replace(".%s" % self.groupname, "")
+        elif name.endswith('.'):
+            entry = name[:-1]
+        else:
+            entry = name
+
+        record = Record(name=entry,
+                        type=type,
+                        target=target,
+                        comment=comment,
+                        weight=weight)
+
+        self.groupfile.save_record(old_record, record)
         self.items[str(record)] = record
 
     def __update_serial(self):
