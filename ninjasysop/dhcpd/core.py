@@ -3,7 +3,7 @@ import subprocess
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
-    'partition':re.compile(r"(?P<sub>subnet[^\}]*}) *(?P<hosts>.*)$")
+    'partition':re.compile(r"(?P<sub>subnet[^\}]*}) *(?P<hosts>.*)$"),
     'hosts': re.compile(r"host (?P<hostname>[^ ]*) *{ *hardware ethernet (?P<mac>[^\;]*); *fixed-address (?P<ip>[^\;]*)")
 }
 
@@ -50,7 +50,7 @@ class GroupFile(object):
                 item = Item(name, mac, ip)
                 items[name] = Item
 
-        return (serial, items)
+        return  items
 
     def __str_item(self, item):
         itemstr = ''
@@ -58,85 +58,39 @@ class GroupFile(object):
             itemstr = "#{0}\n".format(item.comment)
 
         itemstr += "host {name} \{\n hardware ethernet {mac};\n fixed-address {ip}\n}".format(
-                                    name=item.name, mac=item.mac, ip=item.ip
+                                    name=item.name, mac=item.mac, ip=item.ip)
 
         return itemstr
 
-    def save_record(self, item, old_item):
-        re.sub("host www([ \n]+)", "host %s", item.name, vlan)
+    def save_item(self, item, old_item):
 
         with open(self.filename, 'r') as filecontent:
+
             content = filecontent.read()
-            content_1 = re.sub("host %s( *){" % old_item.name,
-                               "host %s {" % item.name,
-                               content)
+            content_1 = re.sub(r"host %s [^\{]*{.*[^\}]*} *\n" % (old_item.name),
+                    self.__str_item(item), content)
             if content == content_1:
                 raise KeyError("host %s not found" % old_item.name)
             else:
                 content = content_1
 
-            content_1 = re.sub("hardware ethernet %s( *);" % old_item.mac,
-                               "hardware ethernet %s ;" % item.mac,
-                               content)
-            if content == content_1:
-                raise KeyError("mac %s not found" % old_item.mac)
-            else:
-                content = content_1
-
-            content_1 = re.sub("fixed-address %s( *);" % old_item.ip,
-                               "fixed-address %s ;" % item.ip,
-                               content)
-            if content == content_1:
-                raise KeyError("host %s not found" % old_item.ip)
-            else:
-                content = content_1
-
-        with open(self.filename, 'w') as filecontent
+        with open(self.filename, 'w') as filecontent:
             filecontent.write(content)
 
-    def remove_record(self, record):
-        # TODO
-        match = re.compile(MATCH_RE_STR['record'].format(name=record.name,
-                                                         rtype=record.type))
-        zonefile = open(self.filename, 'r')
-        lines = zonefile.readlines()
-        zonefile.close()
-        n = 0
-        while n < len(lines) and not match.match(lines[n]):
-            n += 1
+    def remove_item(self, item):
+        with open(self.filename, 'r') as filecontent:
 
-        if n == len(lines):
-            raise KeyError("Not Found, %s can't be deleted" % record.name)
-        else:
-            del lines[n]
+            content = filecontent.read()
+            content_1 = re.sub(r"host %s [^\{]*{.*[^\}]*} *\n" % (item.name),
+                    self.__str_item(item), content)
+            if content == content_1:
+                raise KeyError("host %s not found" % item.name)
+            else:
+                content = content_1
 
-        zonefile = open(self.filename, 'w')
-        zonefile.writelines(lines)
-        zonefile.close()
+        with open(self.filename, 'w') as filecontent:
+            filecontent.write(content)
 
-    def save_serial(self, serial):
-        # TODO
-        match = re.compile(MATCH_RE_STR['serial'])
-
-        zonefile = open(self.filename, 'r')
-        lines = zonefile.readlines()
-        zonefile.close()
-
-        n = 0
-        while n < len(lines) and not match.match(lines[n]):
-            if match.match(lines[n]):
-
-                break
-            n += 1
-
-        if n == len(lines):
-            raise KeyError("Serial not found in file %s" % self.filename)
-        else:
-            lines[n] = self.__str_serial()
-
-        zonefile = open(self.filename, 'w')
-        zonefile.writelines(lines)
-        zonefile.close()
 
 
 class GroupReloadError(Exception):
@@ -146,9 +100,10 @@ class Group(object):
     def __init__(self, groupname, filename):
         self.groupname = groupname
         self.groupfile = GroupFile(filename)
+        self.items = self.groupfile.readfile()
 
     def del_item(self, name):
-        self.groupfile.remove_record(self.items[name])
+        self.groupfile.remove_item(self.items[name])
         del self.items[name]
 
     def get_item(self, ip):
@@ -176,7 +131,7 @@ class Group(object):
         if mac_exact:
             def filter_name_exact(r):
                 return r.mac == mac >= 0
-            filters.append(foñter_mac_exact)
+            filters.append(filter_mac_exact)
 
         if filters:
             return filter(lambda item: all([f(item) for f in filters]),
@@ -184,23 +139,14 @@ class Group(object):
         else:
             return self.items.values()
 
-    def add_item(self, name="", type="", target="", comment="", weight=0):
-        # TODO
-        if name.endswith(self.groupname):
-            entry = name.replace(".%s" % self.groupname, "")
-        elif name.endswith('.'):
-            entry = name[:-1]
-        else:
-            entry = name
+    def add_item(self, name="", mac="", ip="", comment=""):
+        item = Item(name=name,
+                    mac=mac,
+                    ip=ip,
+                    comment=comment)
 
-        record = Record(name=entry,
-                        type=type,
-                        target=target,
-                        comment=comment,
-                        weight=weight)
-
-        self.groupfile.save_record(record)
-        self.items[str(record)] = record
+        self.groupfile.save_record(item)
+        self.items[str(item)] = item
 
     def group_reload(self, cmd=RELOAD_COMMAND):
         try:
