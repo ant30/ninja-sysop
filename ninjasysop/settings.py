@@ -2,7 +2,7 @@
 app = 'bind9'
 
 groups = {
-        'example.com': 'examples/db.example.com',
+        'example.com': 'examples/bind9/db.example.com',
         }
 
 protected_items = {
