@@ -52,7 +52,7 @@ class GroupFile(object):
 
         return (serial, items)
 
-    def __str_record(self, item):
+    def __str_item(self, item):
         itemstr = ''
         if item.comment:
             itemstr = "#{0}\n".format(item.comment)
@@ -62,26 +62,37 @@ class GroupFile(object):
 
         return itemstr
 
-    def save_record(self, record):
-        # TODO
-        match = re.compile(MATCH_RE_STR['record'].format(name=record.name,
-                                                         rtype=record.type))
-        zonefile = open(self.filename, 'r')
-        lines = zonefile.readlines()
-        zonefile.close()
-        n = 0
-        while n < len(lines) and not match.match(lines[n]):
-            n += 1
+    def save_record(self, item, old_item):
+        re.sub("host www([ \n]+)", "host %s", item.name, vlan)
 
-        if n == len(lines):
-            lines.append(self.__str_record(record))
-        else:
-            lines[n] = self.__str_record(record)
+        with open(self.filename, 'r') as filecontent:
+            content = filecontent.read()
+            content_1 = re.sub("host %s( *){" % old_item.name,
+                               "host %s {" % item.name,
+                               content)
+            if content == content_1:
+                raise KeyError("host %s not found" % old_item.name)
+            else:
+                content = content_1
 
-        zonefile = open(self.filename, 'w')
-        print lines
-        zonefile.writelines(lines)
-        zonefile.close()
+            content_1 = re.sub("hardware ethernet %s( *);" % old_item.mac,
+                               "hardware ethernet %s ;" % item.mac,
+                               content)
+            if content == content_1:
+                raise KeyError("mac %s not found" % old_item.mac)
+            else:
+                content = content_1
+
+            content_1 = re.sub("fixed-address %s( *);" % old_item.ip,
+                               "fixed-address %s ;" % item.ip,
+                               content)
+            if content == content_1:
+                raise KeyError("host %s not found" % old_item.ip)
+            else:
+                content = content_1
+
+        with open(self.filename, 'w') as filecontent
+            filecontent.write(content)
 
     def remove_record(self, record):
         # TODO
