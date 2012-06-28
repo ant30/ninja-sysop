@@ -1,5 +1,6 @@
 import re
 import subprocess
+from ninjasysop.validators import IntegrityException
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
@@ -121,10 +122,12 @@ class Group(object):
         del self.items[name]
 
     def get_item(self, name):
-        return self.items[name]
+        if name in self.items:
+            return self.items[name]
+        else:
+            return None
 
-    def get_items(self, mac=None, ip=None, name=None,
-                        mac_exact=None):
+    def get_items(self, name=None, mac=None, ip=None, name_exact=None):
         filters = []
 
         if name:
@@ -133,8 +136,8 @@ class Group(object):
             filters.append(filter_name)
 
         if mac:
-            def filter_type(r):
-                return r.type == type
+            def filter_mac(r):
+                return r.mac == mac
             filters.append(filter_type)
 
         if ip:
@@ -142,10 +145,10 @@ class Group(object):
                 return r.ip == ip
             filters.append(filter_target)
 
-        if mac_exact:
+        if name_exact:
             def filter_name_exact(r):
-                return r.mac == mac >= 0
-            filters.append(filter_mac_exact)
+                return r.name == name
+            filters.append(filter_name_exact)
 
         if filters:
             return filter(lambda item: all([f(item) for f in filters]),
@@ -153,6 +156,8 @@ class Group(object):
         else:
             return self.items.values()
 
+
+    
     def add_item(self, name="", mac="", ip="", comment=""):
         item = Item(name=name,
                     mac=mac,

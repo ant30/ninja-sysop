@@ -32,10 +32,11 @@
 
     <div metal:fill-slot="content">
         <h2><a href="/${groupname}">${groupname}</a></h2>
-        <div tal:condition="exists:form" tal:content="structure form"></div>
-        <div tal:condition="exists:form">
-            <a href="${request.path}/delete">Delete</a>
-        </div>
+        <h3>Name: ${itemname} <a class="btn btn-small" alt="Delete this" href="${request.path}/delete"><i class="icon-remove"></i></a>
+
+        <metal:block tal:omit-tag="" tal:condition="exists:form">
+           <div tal:content="structure form"></div>
+        </metal:block>
         <div tal:condition="exists:item">
             <ul>
                 <li><strong>Protected Zone</strong></li>

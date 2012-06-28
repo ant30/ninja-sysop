@@ -21,3 +21,7 @@ def name_validator(node, value):
 def mac_validator(node, value):
     if RE_MAC.match(value) is None:
         raise Invalid(node, "%s is not a valid MAC (AA:FF:cc:00:11:22) " % value)
+
+
+class IntegrityException(Exception):
+    pass

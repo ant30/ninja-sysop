@@ -2,6 +2,12 @@
 
 from deform import Form
 import deform
+import colander
+
+from deform import ZPTRendererFactory
+from deform import Form
+from pkg_resources import resource_filename
+
 
 from webhelpers.paginate import Page, PageURL_WebOb
 
@@ -61,7 +67,7 @@ class GroupViews(Layouts):
         groupfile = settings.groups[groupname]
         group = core.Group(groupname, groupfile)
 
-        schema = itemform.ItemForm(validator=itemform.item_validator)
+        schema = itemform.ItemForm(validator=itemform.ItemValidator(group))
         form = deform.Form(schema, buttons=('submit',))
 
         response = {"groupname": groupname,
@@ -75,6 +81,7 @@ class GroupViews(Layouts):
             except deform.ValidationFailure, e:
                 response['form'] = e.render()
                 return response
+
             if not item_is_protected(groupname, data['name']):
                 group.add_item(**data)
                 response = HTTPFound()
@@ -123,8 +130,11 @@ class GroupViews(Layouts):
             response['item'] = group.get_item(itemname)
             return response
 
-        schema = itemform.ItemForm(validator=itemform.item_validator)
+
+
+        schema = itemform.ItemForm(validator=itemform.ItemValidator(group))
         form = deform.Form(schema, buttons=('submit',))
+        form['name'].widget = deform.widget.HiddenWidget()
 
         if self.request.POST:
             controls = self.request.POST.items()
@@ -156,7 +166,7 @@ class GroupViews(Layouts):
                     "msg": e.message,
                     }
 
-        return {"groupname": groupname }
+        return {"groupname": groupname}
 
 
     @view_config(renderer="templates/login.pt", context=HTTPForbidden)
