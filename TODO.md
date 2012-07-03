@@ -11,12 +11,14 @@ DNS
 1. [X] Simple Validators (valid IP, ns formar name...)
 1. [ ] CNAME check (internal references only)
 1  [ ] Autocomplete in CNAME
+1. [ ] Network range ips policy.
 
 DHCPD
 -----
 
 1. [X] Simple Validators (valid IP, valid MAC...)
 1. [ ] Consistant file generation (IP in valid header range)
+1. [ ] Suggest a valid IP.
 
 
 Ninja SysOP
@@ -37,3 +39,4 @@ Ninja SysOP
 1. [ ] Generic Interface to allow multiple backend enabled
 1. [ ] temporary file before apply
 1. [ ] revisions for every apply changes
+1. [ ] Refactor backends as setuptools entrypoints
