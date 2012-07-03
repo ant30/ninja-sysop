@@ -2,6 +2,7 @@ import re
 
 import colander
 import deform
+from core import Item
 
 from ninjasysop.validators import ip_validator
 
@@ -12,6 +13,7 @@ recordtype_choices = (
 
 RE_NAME =  r"^[\w.]+[^.]$"
 RE_IP = r"^(?:\d{1,3}\.){3}(?:\d{1,3})$"
+
 
 
 class ItemForm(colander.MappingSchema):
@@ -25,17 +27,21 @@ class ItemForm(colander.MappingSchema):
                                   missing=unicode(""))
 
 
-def item_validator(form, value):
-    if value['type'] == 'A':
-        if not re.match(RE_IP, value['target']):
-            exc = colander.Invalid(form, 'Invalid targe value using A record type')
-            exc['target'] = colander.Invalid(
-                  form, "A IP value is required (255.255.255.255)")
-            raise exc
+class ItemValidator:
 
-    elif value['type'] == 'CNAME':
-        if not re.match(RE_NAME, value['target']):
-            exc = colander.Invalid(form, 'Invalid targe value using A record type')
-            exc['target'] = colander.Invalid(
-                  form, "A NAME value is required 'ej2' for 'ej2.example.com' ")
-            raise exc
+    def __init__(self, group):
+        self.group = group
+
+    def __call__(self, form, value):
+        item = Item(**value)
+        item_group = self.group.get_item(item.name)
+
+        if item.type == 'A':
+            ip_validator(form, item.target)
+
+        elif item.type == 'CNAME':
+            if not re.match(RE_NAME, item.target):
+                exc = colander.Invalid(form, 'Invalid targe value using A record type')
+                exc['target'] = colander.Invalid(
+                      form, "A NAME value is required 'ej2' for 'ej2.example.com' ")
+                raise exc

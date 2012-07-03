@@ -200,7 +200,7 @@ class Group(object):
         else:
             entry = name
 
-        record = Record(name=entry,
+        record = Item(name=entry,
                         type=type,
                         target=target,
                         comment=comment,
@@ -218,7 +218,7 @@ class Group(object):
         else:
             entry = name
 
-        record = Record(name=entry,
+        record = Item(name=entry,
                         type=type,
                         target=target,
                         comment=comment,
