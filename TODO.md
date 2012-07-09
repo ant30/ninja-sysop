@@ -39,4 +39,4 @@ Ninja SysOP
 1. [ ] Generic Interface to allow multiple backend enabled
 1. [ ] temporary file before apply
 1. [ ] revisions for every apply changes
-1. [ ] Refactor backends as setuptools entrypoints
+1. [X] Refactor backends as setuptools entrypoints
