@@ -18,8 +18,6 @@ from pyramid.security import forget
 
 from ninjasysop.layouts import Layouts
 from ninjasysop.userdb import UserDB
-from ninjasysop import settings
-
 
 class GroupViews(Layouts):
 
@@ -32,11 +30,12 @@ class GroupViews(Layouts):
             # get backend name from url
             backend_name = self.request.matchdict['backend']
             self.backend = settings['backends'][backend_name]
+        self.static_settings = settings['static_settings']
 
     @view_config(renderer="templates/group_list.pt", route_name="group_list",
                  permission="view")
     def group_list(self):
-        groups = settings.groups.keys()
+        groups = self.static_settings.groups.keys()
         return {"groups": groups}
 
     @view_config(renderer="templates/group.pt", route_name="group_items",
@@ -45,7 +44,7 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         page = int(self.request.params['page']) if 'page' in self.request.params else 0
         search = self.request.params['search'] if 'search' in self.request.params else None
-        groupfile = settings.groups[groupname]
+        groupfile = self.static_settings.groups[groupname]
         group = self.backend(groupname, groupfile)
 
         if search:
@@ -56,7 +55,7 @@ class GroupViews(Layouts):
         entries = []
         for item in items:
             entries.append({'item':item,
-                            'protected': item_is_protected(groupname, item.name)})
+                            'protected': item_is_protected(self.static_settings, groupname, item.name)})
 
         page_url = PageURL_WebOb(self.request)
         entries = Page(entries, page, url=page_url)
@@ -69,7 +68,7 @@ class GroupViews(Layouts):
                  permission="edit")
     def item_add(self):
         groupname = self.request.matchdict['groupname']
-        groupfile = settings.groups[groupname]
+        groupfile = self.static_settings.groups[groupname]
         group = self.backend(groupname, groupfile)
 
         schema = group.get_add_schema()
@@ -87,7 +86,7 @@ class GroupViews(Layouts):
                 response['form'] = e.render()
                 return response
 
-            if not item_is_protected(groupname, data['name']):
+            if not item_is_protected(self.static_settings, groupname, data['name']):
                 group.add_item(**data)
                 response = HTTPFound()
                 response.location = self.request.route_url('item',
@@ -105,9 +104,9 @@ class GroupViews(Layouts):
     def item_delete(self):
         groupname = self.request.matchdict['groupname']
         itemname = self.request.matchdict['itemname']
-        groupfile = settings.zones[groupname]
+        groupfile = self.static_settings.zones[groupname]
         group = self.backend(groupname, zonefile)
-        if item_is_protected(groupname, itemname):
+        if item_is_protected(self.static_settings, groupname, itemname):
             raise HTTPForbidden("You can not modify this domain name")
 
         group.del_item(itemname)
@@ -121,9 +120,9 @@ class GroupViews(Layouts):
     def item_edit(self):
         groupname = self.request.matchdict['groupname']
         itemname = self.request.matchdict['itemname']
-        groupfile = settings.groups[groupname]
+        groupfile = self.static_settings.groups[groupname]
         group = self.backend(groupname, groupfile)
-        protected = item_is_protected(groupname, itemname)
+        protected = item_is_protected(self.static_settings, groupname, itemname)
         response = {"groupname": groupname,
                     "itemname": itemname}
 
@@ -186,7 +185,7 @@ class GroupViews(Layouts):
         if self.request.POST:
             login = request.params['login']
             password = request.params['password']
-            userdb = UserDB(settings.htpasswd_file)
+            userdb = UserDB(self.static_settings.htpasswd_file)
             if userdb.check_password(login, password):
                 headers = remember(request, login)
                 return HTTPFound(location=came_from,
@@ -209,7 +208,7 @@ class GroupViews(Layouts):
         return HTTPFound(location=url, headers=headers)
 
 
-def item_is_protected(groupname, name):
+def item_is_protected(settings, groupname, name):
     return (hasattr(settings, 'protected_names') and
             groupname in settings.protected_names and
             name in settings.protected_names[groupname])

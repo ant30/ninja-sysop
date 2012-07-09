@@ -12,13 +12,12 @@ from pyramid.exceptions import ConfigurationError
 
 from backends import load_backends
 
-allbackends = load_backends()
-backend = allbackends['Bind9']
+import static_settings
 
-@subscriber(BeforeRender)
-def add_global(event):
-    event['texts'] = backend.get_texts()
-
+def add_global(backend):
+    def events(event):
+        event['texts'] = backend.get_texts()
+    return events
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -47,13 +46,24 @@ def main(global_config, **settings):
 
     config.add_route('group_list', '')
 
+    backend_name = settings.get('ninjasysop.backend')
+
+    allbackends = load_backends()
+
+    backend = allbackends[backend_name]
+
     config.add_settings(backend=backend)
+
+    config.add_subscriber(add_global(backend), BeforeRender)
 
     if not backend:
         ConfigurationError('A backend or backends definition are needed')
 
-
+    config.add_settings(static_settings=static_settings)
 
     config.scan()
 
     return config.make_wsgi_app()
+
+
+

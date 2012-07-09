@@ -149,9 +149,9 @@ class ZoneFile(object):
         zonefile.close()
 
 
-class Bind9(object):
+class Bind9(Backend):
     def __init__(self, name, filename):
-        super(Dhcpd, self).__init__(name, filename)
+        super(Bind9, self).__init__(name, filename)
         self.groupname = name
         self.zonefile = ZoneFile(filename)
         (self.serial, self.items) = self.zonefile.readfile()
@@ -251,10 +251,10 @@ class Bind9(object):
             raise GroupReloadError(e.output)
 
     def get_edit_schema(self, name):
-        return EditHostSchema(validator=DhcpHostValidator(self))
+        return EditEntrySchema(validator=EntryValidator(self))
 
     def get_add_schema(self):
-        return AddHostSchema(validator=DhcpHostValidator(self))
+        return AddEntrySchema(validator=EntryValidator(self))
 
     @classmethod
     def get_texts(self):
