@@ -12,10 +12,8 @@ from pyramid.exceptions import ConfigurationError
 
 from backends import load_backends
 
-
-
 allbackends = load_backends()
-backend = allbackends['Dhcpd']
+backend = allbackends['Bind9']
 
 @subscriber(BeforeRender)
 def add_global(event):

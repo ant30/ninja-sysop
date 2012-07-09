@@ -1,5 +1,9 @@
 import re
 import subprocess
+from ninjasysop.backends import Backend
+
+from forms import AddEntrySchema, EditEntrySchema, EntryValidator
+from texts import texts
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
@@ -38,15 +42,15 @@ class Item(object):
                     comment = self.comment)
 
 
-class GroupFile(object):
+class ZoneFile(object):
     def __init__(self, filename):
         self.filename = filename
 
     def readfile(self):
         serial = None
         names = {}
-        with open(self.filename, 'r') as groupfile:
-            for line in groupfile.readlines():
+        with open(self.filename, 'r') as zonefile:
+            for line in zonefile.readlines():
                 serial_line = PARSER_RE['serial'].search(line)
                 if serial_line:
                     serial = serial_line
@@ -145,18 +149,16 @@ class GroupFile(object):
         zonefile.close()
 
 
-class GroupReloadError(Exception):
-    pass
-
-class Group(object):
-    def __init__(self, groupname, filename):
-        self.groupname = groupname
-        self.groupfile = GroupFile(filename)
-        (self.serial, self.items) = self.groupfile.readfile()
+class Bind9(object):
+    def __init__(self, name, filename):
+        super(Dhcpd, self).__init__(name, filename)
+        self.groupname = name
+        self.zonefile = ZoneFile(filename)
+        (self.serial, self.items) = self.zonefile.readfile()
         assert self.serial, "ERROR: Serial is undefined on %s" % self.filename
 
     def del_item(self, name):
-        self.groupfile.remove_record(self.items[name])
+        self.zonefile.remove_record(self.items[name])
         del self.items[name]
 
     def get_item(self, name):
@@ -206,7 +208,7 @@ class Group(object):
                         comment=comment,
                         weight=weight)
 
-        self.groupfile.save_record(record)
+        self.zonefile.save_record(record)
         self.items[str(record)] = record
 
 
@@ -224,8 +226,10 @@ class Group(object):
                         comment=comment,
                         weight=weight)
 
-        self.groupfile.save_record(old_record, record)
+        self.zonefile.save_record(old_record, record)
         self.items[str(record)] = record
+
+
 
     def __update_serial(self):
         today_str = today.strftime("%Y%m%d")
@@ -235,13 +239,23 @@ class Group(object):
             serial = long("%s%02d" % (today_str, inc_change))
         else:
             serial = long("%s01" % today_str)
-        self.groupfile.save_serial(self.serial)
+        self.zonefile.save_serial(self.serial)
         self.serial = serial
 
-    def group_reload(self, cmd=RELOAD_COMMAND):
+    def applychanges(self, cmd=RELOAD_COMMAND):
         self.__update_serial()
         try:
             subprocess.check_output("%s reload %s" % (cmd, self.groupname),
                                     stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError, e:
             raise GroupReloadError(e.output)
+
+    def get_edit_schema(self, name):
+        return EditHostSchema(validator=DhcpHostValidator(self))
+
+    def get_add_schema(self):
+        return AddHostSchema(validator=DhcpHostValidator(self))
+
+    @classmethod
+    def get_texts(self):
+        return texts

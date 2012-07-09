@@ -41,6 +41,7 @@ setup(name='ninja-sysop',
       main = ninjasysop:main
       [ninjasysop.plugins]
       dhcpd = plugins.dhcpd.dhcpd:Dhcpd
+      bind9 = plugins.bind9.bind9:Bind9
       """,
       )
 

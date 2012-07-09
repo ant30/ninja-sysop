@@ -2,7 +2,6 @@ import re
 
 import colander
 import deform
-from core import Item
 
 from ninjasysop.validators import ip_validator
 
@@ -16,8 +15,7 @@ RE_IP = r"^(?:\d{1,3}\.){3}(?:\d{1,3})$"
 
 
 
-class ItemForm(colander.MappingSchema):
-    name = colander.SchemaNode(colander.String())
+class EditEntrySchema(colander.MappingSchema):
     type = colander.SchemaNode(colander.String(),
                     widget=deform.widget.SelectWidget(values=recordtype_choices)
                 )
@@ -27,12 +25,17 @@ class ItemForm(colander.MappingSchema):
                                   missing=unicode(""))
 
 
-class ItemValidator:
+class AddEntrySchema(EditEntrySchema):
+    name = colander.SchemaNode(colander.String())
+
+
+class EntryValidator:
 
     def __init__(self, group):
         self.group = group
 
     def __call__(self, form, value):
+        from bind9 import Item
         item = Item(**value)
         item_group = self.group.get_item(item.name)
 
