@@ -39,6 +39,8 @@ setup(name='ninja-sysop',
       entry_points = """\
       [paste.app_factory]
       main = ninjasysop:main
+      [ninjasysop.plugins]
+      dhcpd = plugins.dhcpd.dhcpd:Dhcpd
       """,
       )
 

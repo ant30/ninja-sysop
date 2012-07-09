@@ -4,11 +4,9 @@ import colander
 import deform
 
 from ninjasysop.validators import name_validator, ip_validator, mac_validator
-from core import Item
 
-class ItemForm(colander.MappingSchema):
-    name = colander.SchemaNode(colander.String(),
-                               validator=name_validator)
+
+class EditHostForm(colander.MappingSchema):
     ip = colander.SchemaNode(colander.String(),
                              validator=ip_validator)
     mac = colander.SchemaNode(colander.String(),
@@ -17,13 +15,19 @@ class ItemForm(colander.MappingSchema):
 #                                  missing=unicode(""))
 
 
-class ItemValidator:
+class AddHostForm(EditHostForm):
+    name = colander.SchemaNode(colander.String(),
+                               validator=name_validator)
+
+
+class DhcpHostValidator:
 
     def __init__(self, group):
         self.group = group
 
     def __call__(self, form, value):
-        item = Item(**value)
+        from dhcpd import DhcpHost
+        item = DhcpHost(**value)
 
         item_group = self.group.get_item(item.name)
 
