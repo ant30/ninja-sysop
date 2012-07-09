@@ -1,23 +1,26 @@
 from pyramid.config import Configurator
 
+from pyramid.events import subscriber
 from pyramid.events import BeforeRender
+
 from pyramid.authentication import AuthTktAuthenticationPolicy
 
 from resources import bootstrap
+from pyramid.exceptions import ConfigurationError
 
 #from backend import texts
 
-texts=dict(
-    subapp_label = u'Dhcpd range',
-    group_label = u'Dhcpd',
-    item_label = u'Host',
-    item_list_extra_fields = (('mac', u'Mac'),
-                              ('ip', u'IP'),
-                             )
-)
+from backends import load_backends
 
-def renderer_globals_factory(system):
-    return {'texts': texts.texts}
+
+
+allbackends = load_backends()
+backend = allbackends['Dhcpd']
+
+@subscriber(BeforeRender)
+def add_global(event):
+    event['texts'] = backend.get_texts()
+
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -27,7 +30,6 @@ def main(global_config, **settings):
         root_factory=bootstrap,
         authentication_policy=AuthTktAuthenticationPolicy(
             'seekr1t'),
-        renderer_globals_factory=renderer_globals_factory
     )
 
     config.add_static_view('static', 'static/',
@@ -46,6 +48,13 @@ def main(global_config, **settings):
     config.add_route('item_delete', '{groupname}/{itemname}/delete')
 
     config.add_route('group_list', '')
+
+    config.add_settings(backend=backend)
+
+    if not backend:
+        ConfigurationError('A backend or backends definition are needed')
+
+
 
     config.scan()
 

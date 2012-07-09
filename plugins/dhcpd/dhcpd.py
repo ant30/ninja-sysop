@@ -5,8 +5,7 @@ from ninjasysop.backends import Backend, BackendApplyChangesException
 from ninjasysop.validators import IntegrityException
 
 from texts import texts
-import ipdb; ipdb.set_trace()
-from forms import AddHostForm, EditHostForm, DhcpHostValidator
+from forms import AddHostSchema, EditHostSchema, DhcpHostValidator
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
@@ -22,7 +21,7 @@ RELOAD_COMMAND = "/etc/init.d/isc-dhcpd-server reload"
 
 
 
-class DhcpdHost(object):
+class DhcpHost(object):
     def __init__(self, name, mac, ip, comment=''):
         self.ip = ip
         self.mac = mac
@@ -54,7 +53,7 @@ class NetworkFile(object):
             (header, hosts) = partition.groups()
             parsed_hosts = PARSER_RE['hosts'].findall(hosts)
             for (name, mac, ip) in parsed_hosts:
-                item = Item(name, mac, ip)
+                item = DhcpHost(name, mac, ip)
                 items[name] = item
 
         return items
@@ -117,7 +116,7 @@ class Dhcpd(Backend):
 
     def __init__(self, name, filename):
         super(Dhcpd, self).__init__(name, filename)
-        self.networkfile = Networkfile(filename)
+        self.networkfile = NetworkFile(filename)
         self.items = self.networkfile.readfile()
 
     def del_item(self, name):
@@ -161,7 +160,7 @@ class Dhcpd(Backend):
 
 
     def add_item(self, **kwargs):
-        item = Item(name=name,
+        item = DhcpHost(name=name,
                     mac=mac,
                     ip=ip,
                     comment=comment)
@@ -170,7 +169,7 @@ class Dhcpd(Backend):
         self.items[str(item)] = item
 
     def save_item(self, **kwargs):
-        item = Item(name=name,
+        item = DhcpHost(name=name,
                     mac=mac,
                     ip=ip,
                     comment=comment)
@@ -179,10 +178,10 @@ class Dhcpd(Backend):
         self.items[str(old_item)] = item
 
     def get_edit_schema(self, name):
-        return DhcpEditHostForm(validator=DhcpHostValidator(self))
+        return EditHostSchema(validator=DhcpHostValidator(self))
 
     def get_add_schema(self):
-        return DhcpAddHostForm(validator=DhcpHostValidator(self))
+        return AddHostSchema(validator=DhcpHostValidator(self))
 
     @classmethod
     def get_texts(self):

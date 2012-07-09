@@ -6,7 +6,7 @@ import deform
 from ninjasysop.validators import name_validator, ip_validator, mac_validator
 
 
-class EditHostForm(colander.MappingSchema):
+class EditHostSchema(colander.MappingSchema):
     ip = colander.SchemaNode(colander.String(),
                              validator=ip_validator)
     mac = colander.SchemaNode(colander.String(),
@@ -15,7 +15,7 @@ class EditHostForm(colander.MappingSchema):
 #                                  missing=unicode(""))
 
 
-class AddHostForm(EditHostForm):
+class AddHostSchema(EditHostSchema):
     name = colander.SchemaNode(colander.String(),
                                validator=name_validator)
 

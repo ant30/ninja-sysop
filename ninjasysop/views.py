@@ -20,13 +20,18 @@ from ninjasysop.layouts import Layouts
 from ninjasysop.userdb import UserDB
 from ninjasysop import settings
 
-from ninjasysop.backend import itemform, core
-
 
 class GroupViews(Layouts):
 
     def __init__(self, request):
         self.request = request
+        settings = self.request.registry.settings
+        if 'backend' in settings:
+            self.backend = settings['backend']
+        elif 'backends' in settings:
+            # get backend name from url
+            backend_name = self.request.matchdict['backend']
+            self.backend = settings['backends'][backend_name]
 
     @view_config(renderer="templates/group_list.pt", route_name="group_list",
                  permission="view")
@@ -41,7 +46,7 @@ class GroupViews(Layouts):
         page = int(self.request.params['page']) if 'page' in self.request.params else 0
         search = self.request.params['search'] if 'search' in self.request.params else None
         groupfile = settings.groups[groupname]
-        group = core.Group(groupname, groupfile)
+        group = self.backend(groupname, groupfile)
 
         if search:
             items = group.get_items(name=search)
@@ -65,9 +70,9 @@ class GroupViews(Layouts):
     def item_add(self):
         groupname = self.request.matchdict['groupname']
         groupfile = settings.groups[groupname]
-        group = core.Group(groupname, groupfile)
+        group = self.backend(groupname, groupfile)
 
-        schema = itemform.ItemForm(validator=itemform.ItemValidator(group))
+        schema = group.get_add_schema()
         form = deform.Form(schema, buttons=('submit',))
 
         response = {"groupname": groupname,
@@ -101,7 +106,7 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         itemname = self.request.matchdict['itemname']
         groupfile = settings.zones[groupname]
-        group = core.Group(groupname, zonefile)
+        group = self.backend(groupname, zonefile)
         if item_is_protected(groupname, itemname):
             raise HTTPForbidden("You can not modify this domain name")
 
@@ -117,7 +122,7 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         itemname = self.request.matchdict['itemname']
         groupfile = settings.groups[groupname]
-        group = core.Group(groupname, groupfile)
+        group = self.backend(groupname, groupfile)
         protected = item_is_protected(groupname, itemname)
         response = {"groupname": groupname,
                     "itemname": itemname}
@@ -130,11 +135,8 @@ class GroupViews(Layouts):
             response['item'] = group.get_item(itemname)
             return response
 
-
-
-        schema = itemform.ItemForm(validator=itemform.ItemValidator(group))
+        schema = group.get_edit_schema(itemname)
         form = deform.Form(schema, buttons=('submit',))
-        form['name'].widget = deform.widget.HiddenWidget()
 
         if self.request.POST:
             controls = self.request.POST.items()
@@ -161,7 +163,7 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         try:
             group_reload_signal(groupname, get_rndc_command())
-        except core.GroupReloadError, e:
+        except self.backendReloadError, e:
             return {"groupname": groupname,
                     "msg": e.message,
                     }
