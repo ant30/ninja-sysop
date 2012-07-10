@@ -40,3 +40,6 @@ Ninja SysOP
 1. [ ] temporary file before apply
 1. [ ] revisions for every apply changes
 1. [X] Refactor backends as setuptools entrypoints
+1. [ ] Url Generator for
+1. [ ] Rest API
+1. [ ] OAuth
