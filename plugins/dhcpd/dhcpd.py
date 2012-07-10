@@ -184,5 +184,13 @@ class Dhcpd(Backend):
         return AddHostSchema(validator=DhcpHostValidator(self))
 
     @classmethod
+    def get_edit_schema_definition(self):
+        return EditHostSchema
+
+    @classmethod
+    def get_add_schema_definition(self):
+        return AddHostSchema
+
+    @classmethod
     def get_texts(self):
         return texts

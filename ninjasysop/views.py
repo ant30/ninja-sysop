@@ -158,7 +158,7 @@ class GroupViews(Layouts):
     def applychanges(self):
         groupname = self.request.matchdict['groupname']
         try:
-            group_reload_signal(groupname, get_rndc_command())
+            self.backend.apply_changes(groupname)
         except self.backendReloadError, e:
             return {"groupname": groupname,
                     "msg": e.message,
@@ -217,10 +217,6 @@ class BaseRestView(object):
         settings = self.request.registry.settings
         if 'backend' in settings:
             self.backend = settings['backend']
-        elif 'backends' in settings:
-            # get backend name from url
-            backend_name = self.request.matchdict['backend']
-            self.backend = settings['backends'][backend_name]
         self.static_settings = settings['static_settings']
 
     def _serializer(self, schema):
@@ -266,17 +262,23 @@ class BackendRestViews(BaseRestView):
 
     @view_config(route_name="backend_rest_edit_schema", request_method="GET")
     def edit_schema(self):
-        edit_schema = self._serializer(group.get_edit_schema_definition())
+        edit_schema = self._serializer(self.backend.get_edit_schema_definition())
         return edit_schema
 
     @view_config(route_name="backend_rest_add_schema", request_method="GET")
     def add_schema(self):
-        add_schema = self._serializer(group.get_add_schema_definition())
+        add_schema = self._serializer(self.backend.get_add_schema_definition())
         return add_schema
 
 
 @view_defaults(route_name="group_rest_view", renderer="json", permission="view")
 class GroupRESTViews(BaseRestView):
+
+    def __init__(self, request):
+        super(GroupRESTViews, self).__init__(request)
+        self.groupname = self.request.matchdict['groupname']
+        groupfile = self.static_settings.groups[self.groupname]
+        self.group = self.backend(self.groupname, groupfile)
 
     @view_config(renderer="string", request_method="OPTIONS")
     def options(self):
@@ -286,29 +288,26 @@ class GroupRESTViews(BaseRestView):
         return ''
 
     @view_config(request_method="GET")
-    def group_view(self):
-        groupname = self.request.matchdict['groupname']
+    def get(self):
         search = self.request.params['search'] if 'search' in self.request.params else None
-        groupfile = self.static_settings.groups[groupname]
-        group = self.backend(groupname, groupfile)
 
         if search:
-            items = group.get_items(name=search)
+            items = self.group.get_items(name=search)
         else:
-            items = group.get_items()
+            items = self.group.get_items()
 
         entries = []
         for item in items:
-            entries.append({'item':self._serialize_item(item, group),
-                            'protected': item_is_protected(self.static_settings, groupname, item.name)})
+            entries.append({'item':self._serialize_item(item, self.group),
+                            'protected': item_is_protected(self.static_settings, self.groupname, item.name)})
 
         return entries
 
     @view_config(request_method="PUT", permission="edit")
-    def applychanges(self):
+    def apply_changes(self):
         groupname = self.request.matchdict['groupname']
         try:
-            group_reload_signal(groupname, get_rndc_command())
+            self.backend.apply_changes(groupname)
         except self.backendReloadError, e:
             return {"groupname": groupname,
                     "msg": e.message,
@@ -319,6 +318,13 @@ class GroupRESTViews(BaseRestView):
 @view_defaults(route_name="item_rest_view", renderer="json", permission="view")
 class ItemRESTView(BaseRestView):
 
+    def __init__(self, request):
+        super(ItemRESTView, self).__init__(request)
+        self.groupname = self.request.matchdict['groupname']
+        groupfile = self.static_settings.groups[self.groupname]
+        self.group = self.backend(self.groupname, groupfile)
+        self.itemname = self.request.matchdict['itemname']
+
     @view_config(renderer="string", request_method="OPTIONS")
     def options(self):
         headers = self.request.response.headers
@@ -326,28 +332,15 @@ class ItemRESTView(BaseRestView):
         headers['Access-Control-Allow-Headers'] = 'Origin, Content-Type, Accept'
         return ''
 
-
     @view_config(request_method="GET", permission="edit")
     def get(self):
-        groupname = self.request.matchdict['groupname']
-        groupfile = self.static_settings.groups[groupname]
-        group = self.backend(groupname, groupfile)
-        item = group.get_item(itemname)
-        return self._serialize_item(item, group)
+        item = self.group.get_item(self.itemname)
+        return self._serialize_item(item, self.group)
 
     @view_config(request_method="PUT", permission="edit")
     def put(self):
-        groupname = self.request.matchdict['groupname']
-        groupfile = self.static_settings.groups[groupname]
-        group = self.backend(groupname, groupfile)
-
-        schema = group.get_add_schema()
+        schema = self.group.get_add_schema()
         form = deform.Form(schema, buttons=('submit',))
-
-        response = {"groupname": groupname,
-                    "itemname": "new"}
-        response["form"] = form.render()
-
         controls = self.request.PUT.items()
         try:
             data = form.validate(controls)
@@ -364,18 +357,13 @@ class ItemRESTView(BaseRestView):
 
     @view_config(request_method="POST", permission="edit")
     def post(self):
-        groupname = self.request.matchdict['groupname']
-        itemname = self.request.matchdict['itemname']
-        groupfile = self.static_settings.groups[groupname]
-        group = self.backend(groupname, groupfile)
-        protected = item_is_protected(self.static_settings, groupname, itemname)
+        protected = item_is_protected(self.static_settings, self.groupname, self.itemname)
 
         if protected:
             return HTTPForbidden("You can not modify this domain name")
 
-        schema = group.get_edit_schema(itemname)
+        schema = group.get_edit_schema(self.itemname)
         form = deform.Form(schema, buttons=('submit',))
-
         controls = self.request.POST.items()
         try:
             data = form.validate(controls)
@@ -384,7 +372,7 @@ class ItemRESTView(BaseRestView):
             response['form'] = e.render()
             return response
         else:
-            group.save_item(group.get_item(itemname), **data)
+            group.save_item(group.get_item(self.itemname), **data)
             response = HTTPFound()
             return response
 
@@ -392,13 +380,9 @@ class ItemRESTView(BaseRestView):
 
     @view_config(request_method="DELETE",  permission="edit")
     def delete(self):
-        groupname = self.request.matchdict['groupname']
-        itemname = self.request.matchdict['itemname']
-        groupfile = self.static_settings.zones[groupname]
-        group = self.backend(groupname, zonefile)
-        if item_is_protected(self.static_settings, groupname, itemname):
+        if item_is_protected(self.static_settings, self.groupname, self.itemname):
             raise HTTPForbidden("You can not modify this domain name")
 
-        group.del_item(itemname)
+        group.del_item(self.itemname)
         response = HTTPFound()
         return response

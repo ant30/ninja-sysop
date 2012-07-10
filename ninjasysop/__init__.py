@@ -41,14 +41,14 @@ def main(global_config, **settings):
     config.add_static_view('deform_static', 'deform:static')
 
     config.add_route('favicon', 'favicon.ico')
-    config.add_route('login', 'login')
-    config.add_route('logout', 'logout')
+    config.add_route('login', 'login/')
+    config.add_route('logout', 'logout/')
 
     config.add_route('backend_rest_view','api/')
-    config.add_route('backend_rest_edit_schema', 'api/schema/edit')
-    config.add_route('backend_rest_add_schema', 'api/schema/add')
-    config.add_route('group_rest_view', 'api/{groupname}')
-    config.add_route('item_rest_view', 'api/{groupname}/{itemname}')
+    config.add_route('backend_rest_edit_schema', 'api/schema/edit/')
+    config.add_route('backend_rest_add_schema', 'api/schema/add/')
+    config.add_route('group_rest_view', 'api/{groupname}/')
+    config.add_route('item_rest_view', 'api/{groupname}/{itemname}/')
 
     config.add_route('group_items', '{groupname}/')
     config.add_route('group_apply', '{groupname}/applychanges/')
