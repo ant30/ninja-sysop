@@ -58,5 +58,5 @@ def load_backends():
     Backends = {}
     for entrypoint in pkg_resources.iter_entry_points(ENTRYPOINT):
         backend_class = entrypoint.load()
-        Backends[backend_class.__name__] = backend_class
+        Backends[entrypoint.name] = backend_class
     return Backends
