@@ -257,5 +257,13 @@ class Bind9(Backend):
         return AddEntrySchema(validator=EntryValidator(self))
 
     @classmethod
+    def get_edit_schema_definition(self, name):
+        return EditEntrySchema
+
+    @classmethod
+    def get_add_schema_definition(self):
+        return AddEntrySchema
+
+    @classmethod
     def get_texts(self):
         return texts

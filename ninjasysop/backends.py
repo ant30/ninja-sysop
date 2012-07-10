@@ -46,6 +46,14 @@ class Backend(object):
         raise NotImplementedError("Not apply_changes implemented")
 
     @classmethod
+    def get_edit_schema_definition(self, name):
+        raise NotImplementedError("Not edit schema definition implemented")
+
+    @classmethod
+    def get_add_schema_definition(self):
+        raise NotImplementedError("Not add schema definition implemented")
+
+    @classmethod
     def get_texts(self):
         raise NotImplementedError("Not get_texts implemented")
 

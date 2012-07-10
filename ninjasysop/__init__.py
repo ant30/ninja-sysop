@@ -6,7 +6,9 @@ from pyramid.events import BeforeRender
 from pyramid.authentication import AuthTktAuthenticationPolicy
 
 from resources import bootstrap
-from pyramid.exceptions import ConfigurationError
+from pyramid.exceptions import ConfigurationError, NotFound
+from pyramid.httpexceptions import HTTPNotFound
+from pyramid.view import append_slash_notfound_view
 
 #from backend import texts
 
@@ -18,6 +20,9 @@ def add_global(backend):
     def events(event):
         event['texts'] = backend.get_texts()
     return events
+
+def notfound(request):
+    return HTTPNotFound('Not found')
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -38,13 +43,23 @@ def main(global_config, **settings):
     config.add_route('favicon', 'favicon.ico')
     config.add_route('login', 'login')
     config.add_route('logout', 'logout')
-    config.add_route('group_items', '{groupname}')
-    config.add_route('group_apply', '{groupname}/applychanges')
-    config.add_route('item_add', '{groupname}/add')
-    config.add_route('item', '{groupname}/{itemname}')
-    config.add_route('item_delete', '{groupname}/{itemname}/delete')
+
+    config.add_route('backend_rest_view','api/')
+    config.add_route('backend_rest_edit_schema', 'api/schema/edit')
+    config.add_route('backend_rest_add_schema', 'api/schema/add')
+    config.add_route('group_rest_view', 'api/{groupname}')
+    config.add_route('item_rest_view', 'api/{groupname}/{itemname}')
+
+    config.add_route('group_items', '{groupname}/')
+    config.add_route('group_apply', '{groupname}/applychanges/')
+    config.add_route('item_add', '{groupname}/add/')
+    config.add_route('item', '{groupname}/{itemname}/')
+    config.add_route('item_delete', '{groupname}/{itemname}/delete/')
+
 
     config.add_route('group_list', '')
+
+    config.add_view(append_slash_notfound_view, context=NotFound)
 
     backend_name = settings.get('ninjasysop.backend')
 
