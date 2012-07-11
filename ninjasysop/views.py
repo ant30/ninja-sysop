@@ -23,16 +23,14 @@ class GroupViews(Layouts):
         settings = self.request.registry.settings
         if 'backend' in settings:
             self.backend = settings['backend']
-        elif 'backends' in settings:
-            # get backend name from url
-            backend_name = self.request.matchdict['backend']
-            self.backend = settings['backends'][backend_name]
-        self.static_settings = settings['static_settings']
+        self.files = settings['files']
+        self.protected_names = settings['protected_names']
+        self.settings = settings
 
     @view_config(renderer="templates/group_list.pt", route_name="group_list",
                  permission="view")
     def group_list(self):
-        groups = self.static_settings.groups.keys()
+        groups = self.files.keys()
         return {"groups": groups}
 
     @view_config(renderer="templates/group.pt", route_name="group_items",
@@ -41,7 +39,7 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         page = int(self.request.params['page']) if 'page' in self.request.params else 0
         search = self.request.params['search'] if 'search' in self.request.params else None
-        groupfile = self.static_settings.groups[groupname]
+        groupfile = self.files[groupname]
         group = self.backend(groupname, groupfile)
 
         if search:
@@ -52,7 +50,7 @@ class GroupViews(Layouts):
         entries = []
         for item in items:
             entries.append({'item':item,
-                            'protected': item_is_protected(self.static_settings, groupname, item.name)})
+                            'protected':  item.name in self.protected_names[groupname]})
 
         page_url = PageURL_WebOb(self.request)
         entries = Page(entries, page, url=page_url)
@@ -65,7 +63,7 @@ class GroupViews(Layouts):
                  permission="edit")
     def item_add(self):
         groupname = self.request.matchdict['groupname']
-        groupfile = self.static_settings.groups[groupname]
+        groupfile = self.files[groupname]
         group = self.backend(groupname, groupfile)
 
         schema = group.get_add_schema()
@@ -83,7 +81,7 @@ class GroupViews(Layouts):
                 response['form'] = e.render()
                 return response
 
-            if not item_is_protected(self.static_settings, groupname, data['name']):
+            if data['name'] not in self.protected_names[groupname]:
                 group.add_item(**data)
                 response = HTTPFound()
                 response.location = self.request.route_url('item',
@@ -101,9 +99,9 @@ class GroupViews(Layouts):
     def item_delete(self):
         groupname = self.request.matchdict['groupname']
         itemname = self.request.matchdict['itemname']
-        groupfile = self.static_settings.zones[groupname]
-        group = self.backend(groupname, zonefile)
-        if item_is_protected(self.static_settings, groupname, itemname):
+        groupfile = self.files[groupname]
+        group = self.backend(groupname, groupfile)
+        if itemname in self.protected_names[groupname]:
             raise HTTPForbidden("You can not modify this domain name")
 
         group.del_item(itemname)
@@ -117,9 +115,9 @@ class GroupViews(Layouts):
     def item_edit(self):
         groupname = self.request.matchdict['groupname']
         itemname = self.request.matchdict['itemname']
-        groupfile = self.static_settings.groups[groupname]
+        groupfile = self.files[groupname]
         group = self.backend(groupname, groupfile)
-        protected = item_is_protected(self.static_settings, groupname, itemname)
+        protected = itemname in self.protected_names[groupname]
         response = {"groupname": groupname,
                     "itemname": itemname}
 
@@ -182,7 +180,7 @@ class GroupViews(Layouts):
         if self.request.POST:
             login = request.params['login']
             password = request.params['password']
-            userdb = UserDB(self.static_settings.htpasswd_file)
+            userdb = UserDB(self.settings['htpasswd'])
             if userdb.check_password(login, password):
                 headers = remember(request, login)
                 return HTTPFound(location=came_from,
@@ -205,19 +203,13 @@ class GroupViews(Layouts):
         return HTTPFound(location=url, headers=headers)
 
 
-def item_is_protected(settings, groupname, name):
-    return (hasattr(settings, 'protected_names') and
-            groupname in settings.protected_names and
-            name in settings.protected_names[groupname])
-
-
 class BaseRestView(object):
     def __init__(self, request):
         self.request = request
         settings = self.request.registry.settings
-        if 'backend' in settings:
-            self.backend = settings['backend']
-        self.static_settings = settings['static_settings']
+        self.backend = settings['backend']
+        self.files = settings['files']
+        self.protected_names = settings['protected_names']
 
     def _serializer(self, schema):
         schema_definition = []
@@ -257,7 +249,7 @@ class BackendRestViews(BaseRestView):
 
     @view_config(request_method="GET")
     def get(self):
-        groups = self.static_settings.groups.keys()
+        groups = self.files.keys()
         return groups
 
     @view_config(route_name="backend_rest_edit_schema", request_method="GET")
@@ -277,7 +269,7 @@ class GroupRESTViews(BaseRestView):
     def __init__(self, request):
         super(GroupRESTViews, self).__init__(request)
         self.groupname = self.request.matchdict['groupname']
-        groupfile = self.static_settings.groups[self.groupname]
+        groupfile = self.files[self.groupname]
         self.group = self.backend(self.groupname, groupfile)
 
     @view_config(renderer="string", request_method="OPTIONS")
@@ -299,7 +291,7 @@ class GroupRESTViews(BaseRestView):
         entries = []
         for item in items:
             entries.append({'item':self._serialize_item(item, self.group),
-                            'protected': item_is_protected(self.static_settings, self.groupname, item.name)})
+                            'protected': item.name in self.protected_names[groupname]})
 
         return entries
 
@@ -321,9 +313,10 @@ class ItemRESTView(BaseRestView):
     def __init__(self, request):
         super(ItemRESTView, self).__init__(request)
         self.groupname = self.request.matchdict['groupname']
-        groupfile = self.static_settings.groups[self.groupname]
+        groupfile = self.files[self.groupname]
         self.group = self.backend(self.groupname, groupfile)
         self.itemname = self.request.matchdict['itemname']
+        self.is_protected = self.itemname in self.protected_names[self.groupname]
 
     @view_config(renderer="string", request_method="OPTIONS")
     def options(self):
@@ -339,6 +332,8 @@ class ItemRESTView(BaseRestView):
 
     @view_config(request_method="PUT", permission="edit")
     def put(self):
+        if self.is_protected:
+            return HTTPForbidden("You can not modify this domain name")
         schema = self.group.get_add_schema()
         form = deform.Form(schema, buttons=('submit',))
         controls = self.request.PUT.items()
@@ -349,7 +344,7 @@ class ItemRESTView(BaseRestView):
             response['form'] = e.render()
             return response
 
-        if item_is_protected(self.static_settings, groupname, data['name']):
+        if data['name'] in self.protected_names[self.groupname]:
             return HTTPForbidden("You can not modify this domain name")
 
         group.add_item(**data)
@@ -357,9 +352,8 @@ class ItemRESTView(BaseRestView):
 
     @view_config(request_method="POST", permission="edit")
     def post(self):
-        protected = item_is_protected(self.static_settings, self.groupname, self.itemname)
 
-        if protected:
+        if self.is_protected:
             return HTTPForbidden("You can not modify this domain name")
 
         schema = group.get_edit_schema(self.itemname)
@@ -380,7 +374,7 @@ class ItemRESTView(BaseRestView):
 
     @view_config(request_method="DELETE",  permission="edit")
     def delete(self):
-        if item_is_protected(self.static_settings, self.groupname, self.itemname):
+        if self.is_protected:
             raise HTTPForbidden("You can not modify this domain name")
 
         group.del_item(self.itemname)

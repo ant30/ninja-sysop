@@ -30,10 +30,10 @@ Ninja SysOP
 1. [X] Login to edit (htpasswd)
 1. [X] Paginated list
 1. [X] Set appropiate Look & feel
-1. [ ] Name is read only field
+1. [X] Name is read only field
 1. [ ] lock db file zone when is saving
 1. [ ] Error Handler (Custom Error pages)
-1. [X] Show an alert before item is deleted.
+1. [ ] Show an alert before item is deleted.
 1. [ ] LDAP login backend
 1. [ ] SAML login backend
 1. [ ] Generic Interface to allow multiple backend enabled
@@ -41,5 +41,6 @@ Ninja SysOP
 1. [ ] revisions for every apply changes
 1. [X] Refactor backends as setuptools entrypoints
 1. [ ] Url Generator for
-1. [ ] Rest API
+1. [X] Rest API
 1. [ ] OAuth
+1. [ ] Integrated settings on .ini pyramid files
