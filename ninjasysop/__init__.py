@@ -94,7 +94,7 @@ def main(global_config, **settings):
     config.add_settings(backend=backend)
     config.add_subscriber(add_global_texts(backend), BeforeRender)
 
-    files=get_files(settings))
+    files=get_files(settings)
     protected_names = get_protected_names(settings)
     for key in files.keys():
         if key not in protected_names:
