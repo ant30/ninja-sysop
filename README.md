@@ -54,14 +54,20 @@ block like this:
    ninjasysop.backend = bind9
    ninjasysop.htpasswd = examples/htpasswd
    # name pathfile (multiline)
-   ninjasysop.files = 
-       example.com examples/bind9/db.example.com
+   ninjasysop.files =
+       example.com:examples/bind9/db.example.com
    # name protected,names (multiline)
    ninjasysop.protected_names =
-       example.com mail,www,@
+       example.com:mail,www,@
 
 1. Set your backend according to the service you want configure.
 1. Set your own htpasswd file path
 1. Set your files, one per line, descriptive name without spaces and file.
 1. Set your protected names, one per line, with the same names like files.
 1. And run your server as pserver
+
+
+There is a example .ini per backend:
+
+1. dhcpd-development.ini
+1. bind9-development.ini

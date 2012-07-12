@@ -31,7 +31,7 @@ def get_protected_names(settings):
     for item in raw.split('\n'):
         if not item:
             continue
-        name, protected_names_raw = item.split(' ')
+        name, protected_names_raw = item.split(':')
         protected[name] = protected_names_raw.split(',')
 
     return protected
@@ -45,7 +45,7 @@ def get_files(settings):
     for item in raw.split('\n'):
         if not item:
             continue
-        name, filename = item.split(' ')
+        name, filename = item.split(':')
         files[name] = filename
 
     return files
