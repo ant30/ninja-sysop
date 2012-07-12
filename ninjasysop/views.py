@@ -45,6 +45,8 @@ from pyramid.security import forget
 from ninjasysop.layouts import Layouts
 from ninjasysop.userdb import UserDB
 
+from backends import BackendApplyChangesException
+
 class GroupViews(Layouts):
 
     def __init__(self, request):
@@ -185,9 +187,11 @@ class GroupViews(Layouts):
                  permission="edit")
     def applychanges(self):
         groupname = self.request.matchdict['groupname']
+        groupfile = self.files[groupname]
+        group = self.backend(groupname, groupfile)
         try:
-            self.backend.apply_changes(groupname)
-        except self.backendReloadError, e:
+            group.apply_changes()
+        except BackendApplyChangesException, e:
             return {"groupname": groupname,
                     "msg": e.message,
                     }

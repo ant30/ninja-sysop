@@ -41,6 +41,6 @@ Ninja SysOP
 1. [ ] revisions for every apply changes
 1. [X] Refactor backends as setuptools entrypoints
 1. [ ] Url fenerator in templates
-1. [X] Rest API
+1. [X] Rest API with Auth Basic
 1. [ ] OAuth
 1. [X] Integrated settings on .ini pyramid files

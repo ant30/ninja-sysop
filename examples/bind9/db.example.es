@@ -1,6 +1,6 @@
 $TTL    3600
 @       IN      SOA             ns1.example.admin. admin.example.es (
-                2009092101      ;serial aaaammdd
+2009092101 ;serial aaaammdd
                 10800           ;refresh. 3 hours
                 3600            ;retry. 1 hour
                 432000          ;expire. 5 days

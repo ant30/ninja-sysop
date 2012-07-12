@@ -219,6 +219,15 @@ class Dhcpd(Backend):
                 field.widget = deform.widget.TextInputWidget()
         return schema
 
+    def apply_changes(self):
+        cmd=RELOAD_COMMAND
+        self.__update_serial()
+        try:
+            subprocess.check_output("%s reload %s" % (cmd, self.groupname),
+                                    stderr=subprocess.STDOUT, shell=True)
+        except subprocess.CalledProcessError, e:
+            raise BackendApplyChangesException(e.output)
+
     @classmethod
     def get_edit_schema_definition(self):
         return HostSchema

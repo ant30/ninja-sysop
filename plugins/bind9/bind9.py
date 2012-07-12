@@ -31,10 +31,11 @@ import re
 import subprocess
 import deform
 
-from ninjasysop.backends import Backend
+from ninjasysop.backends import Backend, BackendApplyChangesException
 
 from forms import EntrySchema, EntryValidator
 from texts import texts
+from datetime import datetime
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
@@ -47,7 +48,7 @@ PARSER_RE = {
 
 MATCH_RE_STR = {
     'record':r'^{name} *(?:\d+ *|)(?:IN *|){rtype}',
-    'serial':r'(?P<serial>\d{10}) *; *serial',
+    'serial':r'(?: *)(?P<serial>\d{10}) *;(?: *)serial',
 }
 
 RELOAD_COMMAND = "/usr/sbin/rndc"
@@ -84,7 +85,7 @@ class ZoneFile(object):
             for line in zonefile.readlines():
                 serial_line = PARSER_RE['serial'].search(line)
                 if serial_line:
-                    serial = serial_line
+                    serial = serial_line.group('serial')
                     continue
                 record_line = PARSER_RE['record'].search(line)
                 if record_line:
@@ -165,15 +166,14 @@ class ZoneFile(object):
 
         n = 0
         while n < len(lines) and not match.match(lines[n]):
-            if match.match(lines[n]):
-
-                break
             n += 1
 
         if n == len(lines):
             raise KeyError("Serial not found in file %s" % self.filename)
         else:
-            lines[n] = self.__str_serial()
+            serial_re = re.search(MATCH_RE_STR['serial'], lines[n])
+            serial = serial_re.group('serial')
+            lines[n] = self.__str_serial(serial)
 
         zonefile = open(self.filename, 'w')
         zonefile.writelines(lines)
@@ -263,6 +263,7 @@ class Bind9(Backend):
 
 
     def __update_serial(self):
+        today = datetime.now()
         today_str = today.strftime("%Y%m%d")
         if self.serial.startswith(today_str):
             change = self.serial[8:]
@@ -273,13 +274,14 @@ class Bind9(Backend):
         self.zonefile.save_serial(self.serial)
         self.serial = serial
 
-    def applychanges(self, cmd=RELOAD_COMMAND):
+    def apply_changes(self):
+        cmd=RELOAD_COMMAND
         self.__update_serial()
         try:
             subprocess.check_output("%s reload %s" % (cmd, self.groupname),
                                     stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError, e:
-            raise GroupReloadError(e.output)
+            raise BackendApplyChangesException(e.output)
 
     def get_edit_schema(self, name):
         return EntrySchema(validator=EntryValidator(self))
