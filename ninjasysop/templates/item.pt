@@ -59,7 +59,7 @@
                  $('#deformdelete').click(function(e){
                         e.preventDefault();
                         $('#myModal').modal('show');
-                  })
+                  }).addClass("btn-danger");
         </script>
            </div>
 

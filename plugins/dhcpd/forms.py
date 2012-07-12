@@ -6,23 +6,19 @@ import deform
 from ninjasysop.validators import name_validator, ip_validator, mac_validator
 
 
-class EditHostSchema(colander.MappingSchema):
+class HostSchema(colander.MappingSchema):
+    name = colander.SchemaNode(
+                colander.String(),
+                validator=name_validator,
+                widget = deform.widget.HiddenWidget(),
+                )
     ip = colander.SchemaNode(colander.String(),
                              validator=ip_validator)
     mac = colander.SchemaNode(colander.String(),
                               validator=mac_validator)
 #    comment = colander.SchemaNode(colander.String(),
 #                                  missing=unicode(""))
-    name = colander.SchemaNode(
-                colander.String(),
-                validator=name_validator,
-                widget = deform.widget.HiddenWidget(),
-                )
 
-
-class AddHostSchema(EditHostSchema):
-    name = colander.SchemaNode(colander.String(),
-                               validator=name_validator)
 
 
 class DhcpHostValidator:
@@ -38,10 +34,11 @@ class DhcpHostValidator:
 
         if self.new:
             item_group = self.group.get_item(item.name)
-            exc = colander.Invalid(form, 'Entry Host already exist')
-            exc['ip'] = colander.Invalid(
-                  form, "Entry Host already exist")
-            raise exc
+            if item_group:
+                exc = colander.Invalid(form, 'Entry Host already exist')
+                exc['name'] = colander.Invalid(
+                      form, "Entry host already exist")
+                raise exc
 
         # verify IP is not duplicated
         ips = self.group.get_items(ip=item.ip)

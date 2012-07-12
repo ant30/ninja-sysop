@@ -73,7 +73,7 @@ class GroupViews(Layouts):
                     "itemname": "new"}
         response["form"] = form.render()
 
-        if 'submit' in self.request.POST:
+        if 'submit' in self.request.POST and self.request.POST['submit'] == 'submit':
             controls = self.request.POST.items()
             try:
                 data = form.validate(controls)
@@ -82,7 +82,7 @@ class GroupViews(Layouts):
                 return response
 
             if data['name'] not in self.protected_names[groupname]:
-                group.add_item(**data)
+                group.add_item(data)
                 response = HTTPFound()
                 response.location = self.request.route_url('item',
                                                             groupname=groupname,
@@ -133,7 +133,7 @@ class GroupViews(Layouts):
         schema = group.get_edit_schema(itemname)
         form = deform.Form(schema, buttons=('submit', 'delete'))
 
-        if self.request.POST:
+        if 'submit' in self.request.POST and self.request.POST['submit'] == 'submit':
             controls = self.request.POST.items()
             try:
                 data = form.validate(controls)

@@ -1,8 +1,10 @@
 import re
 import subprocess
+import deform
+
 from ninjasysop.backends import Backend
 
-from forms import AddEntrySchema, EditEntrySchema, EntryValidator
+from forms import EntrySchema, EntryValidator
 from texts import texts
 
 # SERIAL = yyyymmddnn ; serial
@@ -194,37 +196,37 @@ class Bind9(Backend):
         else:
             return self.items.values()
 
-    def add_item(self, name="", type="", target="", comment="", weight=0):
-        if name.endswith(self.groupname):
-            entry = name.replace(".%s" % self.groupname, "")
-        elif name.endswith('.'):
-            entry = name[:-1]
+    def add_item(self, obj):
+        if obj["name"].endswith(self.groupname):
+            entry = obj["name"].replace(".%s" % self.groupname, "")
+        elif obj["name"].endswith('.'):
+            entry = obj["name"][:-1]
         else:
-            entry = name
+            entry = obj["name"]
 
         record = Item(name=entry,
-                        type=type,
-                        target=target,
-                        comment=comment,
-                        weight=weight)
+                        type=obj["type"],
+                        target=obj["target"],
+                        comment=obj["comment"],
+                        weight=obj["weight"])
 
-        self.zonefile.save_record(record)
+        self.zonefile.add_record(record)
         self.items[str(record)] = record
 
 
-    def save_item(self, old_record, name="", type="", target="", comment="", weight=0):
-        if name.endswith(self.groupname):
-            entry = name.replace(".%s" % self.groupname, "")
-        elif name.endswith('.'):
-            entry = name[:-1]
+    def save_item(self, old_record, data):
+        if data["name"].endswith(self.groupname):
+            entry = data["name"].replace(".%s" % self.groupname, "")
+        elif data["name"].endswith('.'):
+            entry = data["name"][:-1]
         else:
-            entry = name
+            entry = data["name"]
 
         record = Item(name=entry,
-                        type=type,
-                        target=target,
-                        comment=comment,
-                        weight=weight)
+                        type=data["type"],
+                        target=data["target"],
+                        comment=data["comment"],
+                        weight=data["weight"])
 
         self.zonefile.save_record(old_record, record)
         self.items[str(record)] = record
@@ -251,18 +253,22 @@ class Bind9(Backend):
             raise GroupReloadError(e.output)
 
     def get_edit_schema(self, name):
-        return EditEntrySchema(validator=EntryValidator(self))
+        return EntrySchema(validator=EntryValidator(self))
 
     def get_add_schema(self):
-        return AddEntrySchema(validator=EntryValidator(self))
+        schema = EntrySchema(validator=EntryValidator(self))
+        for field in schema.children:
+            if field.name == 'name':
+                field.widget = deform.widget.TextInputWidget()
+        return EntrySchema(validator=EntryValidator(self))
 
     @classmethod
     def get_edit_schema_definition(self):
-        return EditEntrySchema
+        return EntrySchema
 
     @classmethod
     def get_add_schema_definition(self):
-        return AddEntrySchema
+        return EntrySchema
 
     @classmethod
     def get_texts(self):

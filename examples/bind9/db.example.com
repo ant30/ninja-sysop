@@ -19,6 +19,7 @@ imap    CNAME mail
 pop3    CNAME mail
 webmail CNAME mail
 
-svn CNAME www
+svn CNAME www2
 hg  CNAME www
 git CNAME www
+desarrollo CNAME default

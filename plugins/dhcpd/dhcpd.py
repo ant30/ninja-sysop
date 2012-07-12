@@ -3,9 +3,10 @@ import subprocess
 
 from ninjasysop.backends import Backend, BackendApplyChangesException
 from ninjasysop.validators import IntegrityException
+import deform
 
 from texts import texts
-from forms import AddHostSchema, EditHostSchema, DhcpHostValidator
+from forms import HostSchema, DhcpHostValidator
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
@@ -180,18 +181,22 @@ class Dhcpd(Backend):
         self.items[str(old_item)] = item
 
     def get_edit_schema(self, name):
-        return EditHostSchema(validator=DhcpHostValidator(self))
+        return HostSchema(validator=DhcpHostValidator(self))
 
     def get_add_schema(self):
-        return AddHostSchema(validator=DhcpHostValidator(self), new=True)
+        schema = HostSchema(validator=DhcpHostValidator(self, new=True))
+        for field in schema.children:
+            if field.name == 'name':
+                field.widget = deform.widget.TextInputWidget()
+        return schema
 
     @classmethod
     def get_edit_schema_definition(self):
-        return EditHostSchema
+        return HostSchema
 
     @classmethod
     def get_add_schema_definition(self):
-        return AddHostSchema
+        return HostSchema
 
     @classmethod
     def get_texts(self):

@@ -15,18 +15,19 @@ RE_IP = r"^(?:\d{1,3}\.){3}(?:\d{1,3})$"
 
 
 
-class EditEntrySchema(colander.MappingSchema):
+class EntrySchema(colander.MappingSchema):
+    name = colander.SchemaNode(
+                colander.String(),
+                widget = deform.widget.HiddenWidget(),
+                )
     type = colander.SchemaNode(colander.String(),
                     widget=deform.widget.SelectWidget(values=recordtype_choices)
                 )
     target = colander.SchemaNode(colander.String())
-    weight = colander.SchemaNode(colander.Integer())
+    weight = colander.SchemaNode(colander.Integer(),
+                                 missing=0)
     comment = colander.SchemaNode(colander.String(),
                                   missing=unicode(""))
-
-
-class AddEntrySchema(EditEntrySchema):
-    name = colander.SchemaNode(colander.String())
 
 
 class EntryValidator:
@@ -38,7 +39,14 @@ class EntryValidator:
     def __call__(self, form, value):
         from bind9 import Item
         item = Item(**value)
-        item_group = self.group.get_item(item.name)
+        item_group = self.group.get_items(name=item.name)
+
+        if ((self.new and len(item_group) > 0) or
+            (not self.new and len(item_group) > 1)):
+                exc = colander.Invalid(form, 'Invalid name, it already exist')
+                exc['target'] = colander.Invalid(
+                        form, "This name is already exist")
+                raise exc
 
         if item.type == 'A':
             ip_validator(form, item.target)
