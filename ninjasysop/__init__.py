@@ -121,6 +121,11 @@ def main(global_config, **settings):
     allbackends = load_backends()
     backend = allbackends[backend_name]
     config.add_settings(backend=backend)
+
+    htpasswd_file = settings.get('ninjasysop.htpasswd')
+
+    config.add_settings(htpasswd=htpasswd_file)
+
     config.add_subscriber(add_global_texts(backend), BeforeRender)
 
     files=get_files(settings)

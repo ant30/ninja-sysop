@@ -204,6 +204,7 @@ class GroupViews(Layouts):
     def login(self):
         request = self.request
         login_url = request.resource_url(request.context, 'login')
+        login_url += '/'
         referrer = request.url
         if referrer == login_url:
             referrer = '/' # never use the login form itself as came_from
@@ -224,7 +225,7 @@ class GroupViews(Layouts):
         return dict(
             page_title="Login",
             message=message,
-            url=request.application_url + '/login',
+            url=request.application_url + '/login/',
             came_from=came_from,
             login=login,
             password=password,
