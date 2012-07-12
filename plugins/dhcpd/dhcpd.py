@@ -160,19 +160,19 @@ class Dhcpd(Backend):
 
 
     def add_item(self, **kwargs):
-        item = DhcpHost(name=name,
-                    mac=mac,
-                    ip=ip,
-                    comment=comment)
+        item = DhcpHost(name=kwargs['name'],
+                    mac=kwargs['mac'],
+                    ip=kwargs['ip'],
+                    comment=kwargs['comment'])
 
         self.networkfile.add_item(item)
         self.items[str(item)] = item
 
     def save_item(self, **kwargs):
-        item = DhcpHost(name=name,
-                    mac=mac,
-                    ip=ip,
-                    comment=comment)
+        item = DhcpHost(name=kwargs['name'],
+                    mac=kwargs['mac'],
+                    ip=kwargs['ip'],
+                    comment=kwargs['comment'])
 
         self.networkfile.save_item(old_item, item)
         self.items[str(old_item)] = item

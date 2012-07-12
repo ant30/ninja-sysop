@@ -13,6 +13,11 @@ class EditHostSchema(colander.MappingSchema):
                               validator=mac_validator)
 #    comment = colander.SchemaNode(colander.String(),
 #                                  missing=unicode(""))
+    name = colander.SchemaNode(
+                colander.String(),
+                validator=name_validator,
+                widget = deform.widget.HiddenWidget(),
+                )
 
 
 class AddHostSchema(EditHostSchema):

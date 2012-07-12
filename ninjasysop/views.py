@@ -119,18 +119,19 @@ class GroupViews(Layouts):
         group = self.backend(groupname, groupfile)
         protected = itemname in self.protected_names[groupname]
         response = {"groupname": groupname,
-                    "itemname": itemname}
-
+                    "itemname": itemname,
+                    'item': group.get_item(itemname),
+                    }
         if self.request.POST and protected:
             return HTTPForbidden("You can not modify this domain name")
 
         elif protected:
             response['protected'] = protected
-            response['item'] = group.get_item(itemname)
             return response
 
+
         schema = group.get_edit_schema(itemname)
-        form = deform.Form(schema, buttons=('submit',))
+        form = deform.Form(schema, buttons=('submit', 'delete'))
 
         if self.request.POST:
             controls = self.request.POST.items()
@@ -359,6 +360,7 @@ class ItemRESTView(BaseRestView):
         schema = group.get_edit_schema(self.itemname)
         form = deform.Form(schema, buttons=('submit',))
         controls = self.request.POST.items()
+        controls.append((u'name', itemname))
         try:
             data = form.validate(controls)
         except deform.ValidationFailure, e:

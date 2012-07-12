@@ -33,7 +33,7 @@ Ninja SysOP
 1. [X] Name is read only field
 1. [ ] lock db file zone when is saving
 1. [ ] Error Handler (Custom Error pages)
-1. [ ] Show an alert before item is deleted.
+1. [X] Show an alert before item is deleted.
 1. [ ] LDAP login backend
 1. [ ] SAML login backend
 1. [ ] Generic Interface to allow multiple backend enabled
