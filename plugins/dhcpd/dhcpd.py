@@ -144,7 +144,7 @@ class Dhcpd(Backend):
 
         if 'ip' in kwargs:
             def filter_target(r):
-                return r.ip == ip
+                return r.ip == kwargs['ip']
             filters.append(filter_target)
 
         if 'name_exact' in kwargs:
@@ -159,20 +159,22 @@ class Dhcpd(Backend):
             return self.items.values()
 
 
-    def add_item(self, **kwargs):
-        item = DhcpHost(name=kwargs['name'],
-                    mac=kwargs['mac'],
-                    ip=kwargs['ip'],
-                    comment=kwargs['comment'])
+    def add_item(self, obj):
+        item = DhcpHost(name=obj['name'],
+                    mac=obj['mac'],
+                    ip=obj['ip'],
+                    #comment=obj['comment'],
+                    )
 
         self.networkfile.add_item(item)
         self.items[str(item)] = item
 
-    def save_item(self, **kwargs):
-        item = DhcpHost(name=kwargs['name'],
-                    mac=kwargs['mac'],
-                    ip=kwargs['ip'],
-                    comment=kwargs['comment'])
+    def save_item(self, old_item, obj):
+        item = DhcpHost(name=obj['name'],
+                    mac=obj['mac'],
+                    ip=obj['ip'],
+                    #comment=obj['comment'],
+                    )
 
         self.networkfile.save_item(old_item, item)
         self.items[str(old_item)] = item
@@ -181,7 +183,7 @@ class Dhcpd(Backend):
         return EditHostSchema(validator=DhcpHostValidator(self))
 
     def get_add_schema(self):
-        return AddHostSchema(validator=DhcpHostValidator(self))
+        return AddHostSchema(validator=DhcpHostValidator(self), new=True)
 
     @classmethod
     def get_edit_schema_definition(self):

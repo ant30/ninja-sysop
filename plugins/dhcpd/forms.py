@@ -27,28 +27,30 @@ class AddHostSchema(EditHostSchema):
 
 class DhcpHostValidator:
 
-    def __init__(self, group):
+    def __init__(self, group, new=False):
         self.group = group
+        self.new = new
 
     def __call__(self, form, value):
         from dhcpd import DhcpHost
         item = DhcpHost(**value)
 
-        item_group = self.group.get_item(item.name)
+
+        if self.new:
+            item_group = self.group.get_item(item.name)
+            exc = colander.Invalid(form, 'Entry Host already exist')
+            exc['ip'] = colander.Invalid(
+                  form, "Entry Host already exist")
+            raise exc
 
         # verify IP is not duplicated
         ips = self.group.get_items(ip=item.ip)
 
-        if ((item_group and len(ips) > 0) or
-            (item_group is None and
-                ((len(ips) == 1 and ips[0].name != item.name) or
-                  len(ips) > 1))):
-            #raise colander.Invalid(form['ip'], "Entry IP already exists in config in item %s" % (ips[0].name))
-
-
+        if ((self.new and len(ips) > 0 ) or
+            (not self.new and len(ips) == 1 and ips[0].name != item.name)):
             exc = colander.Invalid(form, 'Entry IP already assigned to host %s' % (ips[0].name))
             exc['ip'] = colander.Invalid(
-                  form, "IP repeated, select another ip")
+                  form, "IP is already assigned, select another ip")
             raise exc
 
         ## TODO: verify IP is in correct range taken from header file

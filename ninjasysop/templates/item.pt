@@ -36,7 +36,7 @@
         <div tal:omit-tag="" tal:switch="exists:form">
            <div tal:omit-tag="" tal:case="True">
                <tal:cond tal:condition="python:itemname != 'new'">
-                <h3>Name: ${itemname}
+                <h3>Name: ${itemname} </h3>
                </tal:cond>
                <div tal:content="structure form"></div>
 

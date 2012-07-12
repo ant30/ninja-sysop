@@ -141,7 +141,7 @@ class GroupViews(Layouts):
                 response['form'] = e.render()
                 return response
             else:
-                group.save_item(group.get_item(itemname), **data)
+                group.save_item(group.get_item(itemname), data)
                 response = HTTPFound()
                 response.location = self.request.route_url('item',
                                                             groupname=groupname,

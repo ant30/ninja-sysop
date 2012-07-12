@@ -31,8 +31,9 @@ class AddEntrySchema(EditEntrySchema):
 
 class EntryValidator:
 
-    def __init__(self, group):
+    def __init__(self, group, new=False):
         self.group = group
+        self.new = False
 
     def __call__(self, form, value):
         from bind9 import Item
