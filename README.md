@@ -50,15 +50,14 @@ create many users as you need with htpasswd utility from apache2-tools. If you
 want add your own files you must edit development.init and modify ninjasysop
 block like this:
 
-
-   ninjasysop.backend = bind9
-   ninjasysop.htpasswd = examples/htpasswd
-   # name pathfile (multiline)
-   ninjasysop.files =
-       example.com:examples/bind9/db.example.com
-   # name protected,names (multiline)
-   ninjasysop.protected_names =
-       example.com:mail,www,@
+    ninjasysop.backend = bind9
+    ninjasysop.htpasswd = examples/htpasswd
+    # name pathfile (multiline)
+    ninjasysop.files =
+        example.com:examples/bind9/db.example.com
+    # name protected,names (multiline)
+    ninjasysop.protected_names =
+        example.com:mail,www,@
 
 1. Set your backend according to the service you want configure.
 1. Set your own htpasswd file path
