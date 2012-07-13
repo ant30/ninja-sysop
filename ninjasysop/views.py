@@ -325,7 +325,7 @@ class GroupRESTViews(BaseRestView):
         entries = []
         for item in items:
             entries.append({'item':self._serialize_item(item, self.group),
-                            'protected': item.name in self.protected_names[groupname]})
+                            'protected': item.name in self.protected_names[self.groupname]})
 
         return entries
 
