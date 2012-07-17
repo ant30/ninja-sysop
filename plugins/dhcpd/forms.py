@@ -34,6 +34,8 @@ import deform
 
 from ninjasysop.validators import name_validator, ip_validator, mac_validator
 
+from ipaddr import IPv4Address
+
 
 class HostSchema(colander.MappingSchema):
     name = colander.SchemaNode(
@@ -80,3 +82,9 @@ class DhcpHostValidator:
             raise exc
 
         ## TODO: verify IP is in correct range taken from header file
+        if IPv4Address(item.ip) not in self.group.network['network']:
+            exc = colander.Invalid(form, '%s is not a valid IP' % (item.ip))
+            exc['ip'] = colander.Invalid(
+                  form, "This IP is not a valid IP")
+            raise exc
+

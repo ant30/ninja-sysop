@@ -27,10 +27,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # 
-from colander import Invalid
-import re
 
-RE_IP = re.compile(r"^(?:\d{1,3}\.){3}(?:\d{1,3})$")
+import re
+from colander import Invalid
+from ipaddr import IPv4Address, AddressValueError
 
 RE_NAME = re.compile(r"^([a-z0-9]([-a-z0-9]*[a-z0-9])?\\.)*([a-z0-9]+)$", re.IGNORECASE)
 
@@ -38,7 +38,9 @@ RE_MAC = re.compile(r"([0-9a-f]{2}:){5}[0-9a-f]{2}", re.IGNORECASE)
 
 
 def ip_validator(node, value):
-    if RE_IP.match(value) is None:
+    try:
+        IPv4Address(value)
+    except AddressValueError:
         raise Invalid(node, "%s is not a valid IP" % value)
 
 

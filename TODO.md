@@ -17,8 +17,8 @@ DHCPD
 -----
 
 1. [X] Simple Validators (valid IP, valid MAC...)
-1. [ ] Consistant file generation (IP in valid header range)
-1. [ ] Suggest a valid IP.
+1. [X] Consistant file generation (IP in valid header range)
+1. [X] Suggest a valid IP.
 
 
 Ninja SysOP
