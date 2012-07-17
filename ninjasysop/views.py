@@ -174,11 +174,8 @@ class GroupViews(Layouts):
                 return response
             else:
                 group.save_item(group.get_item(itemname), data)
-                response = HTTPFound()
-                response.location = self.request.route_url('item',
-                                                            groupname=groupname,
-                                                            itemname=data['name'])
-                return response
+                texts = group.get_texts()
+                response['flash'] = '%s %s saved' % (texts['item_label'], itemname)
 
         item = group.get_item(itemname)
         response['form'] = form.render(item.todict())
