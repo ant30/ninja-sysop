@@ -41,6 +41,7 @@ from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPCreated
 from pyramid.security import remember
 from pyramid.security import forget
+from pyramid.security import authenticated_userid
 
 from ninjasysop.layouts import Layouts
 from ninjasysop.userdb import UserDB
@@ -189,8 +190,9 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         groupfile = self.files[groupname]
         group = self.backend(groupname, groupfile)
+        username = authenticated_userid(self.request)
         try:
-            group.apply_changes()
+            group.apply_changes(username)
         except BackendApplyChangesException, e:
             return {"groupname": groupname,
                     "msg": e.message,
@@ -333,7 +335,7 @@ class GroupRESTViews(BaseRestView):
     def apply_changes(self):
         groupname = self.request.matchdict['groupname']
         try:
-            self.backend.apply_changes(groupname)
+            self.backend.apply_changes(groupname, username)
         except self.backendReloadError, e:
             return {"groupname": groupname,
                     "msg": e.message,

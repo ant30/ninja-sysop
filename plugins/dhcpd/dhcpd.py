@@ -27,8 +27,12 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # 
+
+from datetime import datetime
 import re
+import shutil
 import subprocess
+
 
 from ninjasysop.backends import Backend, BackendApplyChangesException
 from ninjasysop.validators import IntegrityException
@@ -219,11 +223,18 @@ class Dhcpd(Backend):
                 field.widget = deform.widget.TextInputWidget()
         return schema
 
-    def apply_changes(self):
+
+    def _timestamp(self):
+        today = datetime.now()
+        return today.strftime("%Y%m%d%H%M%S")
+
+
+    def apply_changes(self, username):
         cmd=RELOAD_COMMAND
-        self.__update_serial()
+        save_filename = "%s.%s.%s" % (self.filename, self._timestamp(), username)
+        shutil.copy(self.filename, save_filename)
         try:
-            subprocess.check_output("%s reload %s" % (cmd, self.groupname),
+            subprocess.check_output("%s" % cmd,
                                     stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError, e:
             raise BackendApplyChangesException(e.output)
