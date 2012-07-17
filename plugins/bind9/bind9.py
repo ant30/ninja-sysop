@@ -26,9 +26,11 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
+#
 import re
 import subprocess
+import shutil
+
 import deform
 
 from ninjasysop.backends import Backend, BackendApplyChangesException
@@ -40,7 +42,7 @@ from datetime import datetime
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
     'serial':re.compile(r'(?P<serial>\d{10}) *; *serial'),
-    'record':re.compile(r'^(?P<name>(?:[a-zA-Z0-9-.]*|@)) *(?:(?P<weight>\d+)'
+    'record':re.compile(r'^(?P<name>(?:[a-zA-Z0-9-.]*|@)) *(?:(?P<ttl>\d+)'
                         r' *|)(?:IN *|)(?P<type>A|CNAME)'
                         r' *(?P<target>[a-zA-Z0-9-.]*)'
                         r'(?:(?: *|);(?P<comment>.*)$|)'),
@@ -51,16 +53,16 @@ MATCH_RE_STR = {
     'serial':r'(?: *)(?P<serial>\d{10}) *;(?: *)serial',
 }
 
-RELOAD_COMMAND = "/usr/sbin/rndc"
+RELOAD_COMMAND = "/usr/sbin/rndc reload"
 
 
 
 class Item(object):
-    def __init__(self, name, type, target, weight=0, comment=''):
+    def __init__(self, name, type, target, ttl=0, comment=''):
         self.name = name
         self.type = type
         self.target = target
-        self.weight = weight or 0
+        self.ttl = ttl or 0
         self.comment = comment or ''
 
     def __str__(self):
@@ -70,7 +72,7 @@ class Item(object):
         return dict(name = self.name,
                     type = self.type,
                     target = self.target,
-                    weight = self.weight,
+                    ttl = self.ttl,
                     comment = self.comment)
 
 
@@ -95,13 +97,13 @@ class ZoneFile(object):
 
     def __str_record(self, record):
         recordstr = record.name
-        if record.weight:
-            recordstr += " {0}".format(str(record.weight))
+        if record.ttl:
+            recordstr += " {0}".format(str(record.ttl))
 
         recordstr += " {type} {target}".format(type=record.type,
                                               target=record.target)
         if record.comment:
-            recordstr += ";{0}".format(record.comment)
+            recordstr += " ;{0}".format(record.comment)
 
         recordstr += '\n'
         return recordstr
@@ -237,7 +239,7 @@ class Bind9(Backend):
                         type=obj["type"],
                         target=obj["target"],
                         comment=obj["comment"],
-                        weight=obj["weight"])
+                        ttl=obj["ttl"])
 
         self.zonefile.add_record(record)
         self.items[str(record)] = record
@@ -255,7 +257,7 @@ class Bind9(Backend):
                         type=data["type"],
                         target=data["target"],
                         comment=data["comment"],
-                        weight=data["weight"])
+                        ttl=data["ttl"])
 
         self.zonefile.save_record(old_record, record)
         self.items[str(record)] = record
@@ -274,11 +276,17 @@ class Bind9(Backend):
         self.zonefile.save_serial(self.serial)
         self.serial = serial
 
-    def apply_changes(self):
+    def freeze_file(self, username):
+        # generate a copy of actual file with username.serial extension
+        pass
+
+    def apply_changes(self, username):
         cmd=RELOAD_COMMAND
         self.__update_serial()
+        save_filename = "%s.%s.%s" % (self.filename, self.serial, username)
+        shutil.copy(self.filename, save_filename)
         try:
-            subprocess.check_output("%s reload %s" % (cmd, self.groupname),
+            subprocess.check_output("%s %s" % (cmd, self.groupname),
                                     stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError, e:
             raise BackendApplyChangesException(e.output)
