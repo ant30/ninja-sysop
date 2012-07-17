@@ -53,7 +53,7 @@ class EntrySchema(colander.MappingSchema):
                     widget=deform.widget.SelectWidget(values=recordtype_choices)
                 )
     target = colander.SchemaNode(colander.String())
-    weight = colander.SchemaNode(colander.Integer(),
+    ttl = colander.SchemaNode(colander.Integer(),
                                  missing=0)
     comment = colander.SchemaNode(colander.String(),
                                   missing=unicode(""))

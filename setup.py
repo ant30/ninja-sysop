@@ -14,6 +14,7 @@ requires = [
     'deform_bootstrap',
     'passlib',
     'webhelpers',
+    'ipaddr',
     'paste',
     ]
 

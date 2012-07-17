@@ -27,8 +27,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 # 
+
+from datetime import datetime
 import re
+import shutil
 import subprocess
+from ipaddr import IPv4Network, IPv4Address
+
 
 from ninjasysop.backends import Backend, BackendApplyChangesException
 from ninjasysop.validators import IntegrityException
@@ -40,7 +45,9 @@ from forms import HostSchema, DhcpHostValidator
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
     'partition':re.compile(r"(?P<sub>subnet[^\}]*}) *(?P<hosts>.*)$"),
-    'hosts': re.compile(r"host (?P<hostname>[^ ]*) *{ *hardware ethernet (?P<mac>[^\;]*); *fixed-address (?P<ip>[^\;]*)")
+    'header': re.compile("subnet (?P<subnet>[\d.]+) netmask (?P<netmask>[\d\.]+)(?: *|)\{(?: *|)range (?P<start>[\d\.]+) (?P<end>[\d\.]+)"),
+    'hosts': re.compile(r"host (?P<hostname>[^ ]*) *{ *hardware ethernet (?P<mac>[^\;]*); *fixed-address (?P<ip>[^\;]*)"),
+    'router': re.compile(r"option routers (?P<router>[\d.]+)")
 }
 
 MATCH_RE_STR = {
@@ -81,12 +88,23 @@ class NetworkFile(object):
             if not partition:
                 raise IOError("Bad File Format")
             (header, hosts) = partition.groups()
+
+            parsed_header = PARSER_RE['header'].search(header)
+            route_header = PARSER_RE['router'].search(header)
+            network = dict(network=IPv4Network("%s/%s" % (parsed_header.group('subnet'),
+                                                        parsed_header.group('netmask'),
+                                                       )),
+                           start=IPv4Address(parsed_header.group('start')),
+                           end=IPv4Address(parsed_header.group('end')),
+                           router=IPv4Address(route_header.group('router')),
+                           )
+
             parsed_hosts = PARSER_RE['hosts'].findall(hosts)
             for (name, mac, ip) in parsed_hosts:
                 item = DhcpHost(name, mac, ip)
                 items[name] = item
 
-        return items
+        return (network, items)
 
     def __str_item(self, item):
         itemstr = ''
@@ -147,7 +165,7 @@ class Dhcpd(Backend):
     def __init__(self, name, filename):
         super(Dhcpd, self).__init__(name, filename)
         self.networkfile = NetworkFile(filename)
-        self.items = self.networkfile.readfile()
+        (self.network, self.items) = self.networkfile.readfile()
 
     def del_item(self, name):
         self.networkfile.remove_item(self.items[name])
@@ -188,6 +206,22 @@ class Dhcpd(Backend):
         else:
             return self.items.values()
 
+    def get_free_ip(self):
+        # A free IP is:
+        #   * Not asigned IP
+        #   * Not in DHCPD start/end range (not ip collisions)
+        #   * A IP in network (subnet/netmask) range
+        start_ip = self.network['network'].ip
+        ip = start_ip + 1
+        while (not (ip > self.network['start'] and ip < self.network['start']) and
+               not (self.get_items(ip=ip.exploded)) and
+               ip in self.network['network']):
+            ip += 1
+
+        if ip not in self.network['network']:
+            return ""
+        else:
+            return ip.exploded
 
     def add_item(self, obj):
         item = DhcpHost(name=obj['name'],
@@ -217,13 +251,28 @@ class Dhcpd(Backend):
         for field in schema.children:
             if field.name == 'name':
                 field.widget = deform.widget.TextInputWidget()
+            if field.name == 'ip':
+                free_ip = self.get_free_ip()
+                if free_ip:
+                    field.default = self.get_free_ip()
+                    field.description = "You can use %s as available IP" % free_ip
+                else:
+                    field.description = "There aren't available IPs"
+
         return schema
 
-    def apply_changes(self):
+
+    def _timestamp(self):
+        today = datetime.now()
+        return today.strftime("%Y%m%d%H%M%S")
+
+
+    def apply_changes(self, username):
         cmd=RELOAD_COMMAND
-        self.__update_serial()
+        save_filename = "%s.%s.%s" % (self.filename, self._timestamp(), username)
+        shutil.copy(self.filename, save_filename)
         try:
-            subprocess.check_output("%s reload %s" % (cmd, self.groupname),
+            subprocess.check_output("%s" % cmd,
                                     stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError, e:
             raise BackendApplyChangesException(e.output)

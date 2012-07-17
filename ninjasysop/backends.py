@@ -71,7 +71,7 @@ class Backend(object):
     def get_add_schema(self, name):
         raise NotImplementedError("Not get_addform implemented")
 
-    def apply_changes(self):
+    def apply_changes(self, username):
         raise NotImplementedError("Not apply_changes implemented")
 
     @classmethod

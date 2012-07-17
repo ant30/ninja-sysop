@@ -32,6 +32,10 @@
     <div metal:fill-slot="content">
         <h2><a href="/${groupname}">${groupname}</a></h2>
 
+        <div class="alert alert-success" 
+             tal:condition="exists:flash"
+             tal:content="flash">
+        </div>
 
         <div tal:omit-tag="" tal:switch="exists:form">
            <div tal:omit-tag="" tal:case="True">
