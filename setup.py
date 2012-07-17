@@ -9,6 +9,8 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 requires = [
     'pyramid',
     'pyramid_debugtoolbar',
+    'repoze.who>=2.0',
+    'pyramid_who',
     'waitress',
     'deform',
     'deform_bootstrap',

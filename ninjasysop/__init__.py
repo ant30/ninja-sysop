@@ -39,6 +39,8 @@ from pyramid.exceptions import ConfigurationError, NotFound
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import append_slash_notfound_view
 
+from pyramid_who.whov2 import WhoV2AuthenticationPolicy
+
 from backends import load_backends
 
 
@@ -83,11 +85,24 @@ def get_files(settings):
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
+
+
+    identifier_id = 'auth_tkt'
+    who_ini_file = global_config['__file__']
+
+    from userdb import UserDB
+
+    def verify_user(user, password):
+        userdb = UserDB(settings['ninjasysop.htpasswd'])
+        return userdb.check_password(login, passwor)
+
+
     config = Configurator(
         settings=settings,
         root_factory=bootstrap,
-        authentication_policy=AuthTktAuthenticationPolicy(
-            'seekr1t'),
+        authentication_policy=WhoV2AuthenticationPolicy(
+                                who_ini_file,
+                                identifier_id)
     )
 
     config.add_static_view('static', 'static/',
