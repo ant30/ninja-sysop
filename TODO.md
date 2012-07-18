@@ -17,8 +17,8 @@ DHCPD
 -----
 
 1. [X] Simple Validators (valid IP, valid MAC...)
-1. [ ] Consistant file generation (IP in valid header range)
-1. [ ] Suggest a valid IP.
+1. [X] Consistant file generation (IP in valid header range)
+1. [X] Suggest a valid IP.
 
 
 Ninja SysOP
@@ -38,7 +38,7 @@ Ninja SysOP
 1. [ ] SAML login backend
 1. [ ] Generic Interface to allow multiple backend enabled
 1. [ ] temporary file before apply
-1. [ ] revisions for every apply changes
+1. [X] revisions for every apply changes
 1. [X] Refactor backends as setuptools entrypoints
 1. [ ] Url fenerator in templates
 1. [X] Rest API with Auth Basic

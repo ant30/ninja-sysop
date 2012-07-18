@@ -136,6 +136,8 @@ def main(global_config, **settings):
     config.add_settings(files=files)
     config.add_settings(protected_names=protected_names)
 
+    htpasswd_file = settings.get('ninjasysop.htpasswd')
+    config.add_settings(htpasswd=htpasswd_file)
 
     if not backend:
         ConfigurationError('A backend or backends definition are needed')

@@ -23,24 +23,25 @@ Python 2.7 and virtualenv is required.
 
 1. Download repository:
 
-    $ git://github.com/ant30/ninja-sysop.git
+   `git clone git://github.com/ant30/ninja-sysop.git`
 
 1. Create a virtualenv:
 
-    $ virtualenv ninja-sysop
+    `virtualenv ninja-sysop`
 
 1. Load virtualenv:
 
-    $ cd ninja-sysop
-    $ source bin/activate
+    `cd ninja-sysop`
+
+    `source bin/activate`
 
 1. Deploy package as development:
 
-    $ python setup.py development
+    `python setup.py develop`
 
 1. To run the development server execute:
 
-    $ pserve development.init --reload
+    `pserve development.init --reload`
 
 1. Go to http://localhost:6543 to get Web Interface
 
@@ -50,15 +51,14 @@ create many users as you need with htpasswd utility from apache2-tools. If you
 want add your own files you must edit development.init and modify ninjasysop
 block like this:
 
-
-   ninjasysop.backend = bind9
-   ninjasysop.htpasswd = examples/htpasswd
-   # name pathfile (multiline)
-   ninjasysop.files =
-       example.com:examples/bind9/db.example.com
-   # name protected,names (multiline)
-   ninjasysop.protected_names =
-       example.com:mail,www,@
+    ninjasysop.backend = bind9
+    ninjasysop.htpasswd = examples/htpasswd
+    # name pathfile (multiline)
+    ninjasysop.files =
+        example.com:examples/bind9/db.example.com
+    # name protected,names (multiline)
+    ninjasysop.protected_names =
+        example.com:mail,www,@
 
 1. Set your backend according to the service you want configure.
 1. Set your own htpasswd file path

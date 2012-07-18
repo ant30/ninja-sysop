@@ -41,6 +41,7 @@ from pyramid.view import view_config, view_defaults
 from pyramid.httpexceptions import HTTPFound, HTTPForbidden, HTTPCreated
 from pyramid.security import remember
 from pyramid.security import forget
+from pyramid.security import authenticated_userid
 
 from ninjasysop.layouts import Layouts
 from ninjasysop.userdb import UserDB
@@ -173,11 +174,8 @@ class GroupViews(Layouts):
                 return response
             else:
                 group.save_item(group.get_item(itemname), data)
-                response = HTTPFound()
-                response.location = self.request.route_url('item',
-                                                            groupname=groupname,
-                                                            itemname=data['name'])
-                return response
+                texts = group.get_texts()
+                response['flash'] = '%s %s saved' % (texts['item_label'], itemname)
 
         item = group.get_item(itemname)
         response['form'] = form.render(item.todict())
@@ -189,8 +187,9 @@ class GroupViews(Layouts):
         groupname = self.request.matchdict['groupname']
         groupfile = self.files[groupname]
         group = self.backend(groupname, groupfile)
+        username = authenticated_userid(self.request)
         try:
-            group.apply_changes()
+            group.apply_changes(username)
         except BackendApplyChangesException, e:
             return {"groupname": groupname,
                     "msg": e.message,
@@ -326,7 +325,7 @@ class GroupRESTViews(BaseRestView):
         entries = []
         for item in items:
             entries.append({'item':self._serialize_item(item, self.group),
-                            'protected': item.name in self.protected_names[groupname]})
+                            'protected': item.name in self.protected_names[self.groupname]})
 
         return entries
 
@@ -334,7 +333,7 @@ class GroupRESTViews(BaseRestView):
     def apply_changes(self):
         groupname = self.request.matchdict['groupname']
         try:
-            self.backend.apply_changes(groupname)
+            self.backend.apply_changes(groupname, username)
         except self.backendReloadError, e:
             return {"groupname": groupname,
                     "msg": e.message,
