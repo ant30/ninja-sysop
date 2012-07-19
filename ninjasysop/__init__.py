@@ -32,14 +32,10 @@ from pyramid.config import Configurator
 from pyramid.events import subscriber
 from pyramid.events import BeforeRender
 
-from pyramid.authentication import AuthTktAuthenticationPolicy
-
 from resources import bootstrap
 from pyramid.exceptions import ConfigurationError, NotFound
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.view import append_slash_notfound_view
-
-from pyramid_who.whov2 import WhoV2AuthenticationPolicy
 
 from backends import load_backends
 
@@ -90,20 +86,12 @@ def main(global_config, **settings):
     identifier_id = 'auth_tkt'
     who_ini_file = global_config['__file__']
 
-    from userdb import UserDB
-
-    def verify_user(user, password):
-        userdb = UserDB(settings['ninjasysop.htpasswd'])
-        return userdb.check_password(login, passwor)
-
-
     config = Configurator(
         settings=settings,
         root_factory=bootstrap,
-        authentication_policy=WhoV2AuthenticationPolicy(
-                                who_ini_file,
-                                identifier_id)
     )
+
+    config.include("pyramid_whoauth")
 
     config.add_static_view('static', 'static/',
                            cache_max_age=86400)
@@ -112,8 +100,8 @@ def main(global_config, **settings):
     config.add_static_view('deform_static', 'deform:static')
 
     config.add_route('favicon', 'favicon.ico')
-    config.add_route('login', 'login/')
-    config.add_route('logout', 'logout/')
+#    config.add_route('login', 'login/')
+#    config.add_route('logout', 'logout/')
 
     config.add_route('backend_rest_view','api/')
     config.add_route('backend_rest_edit_schema', 'api/schema/edit/')

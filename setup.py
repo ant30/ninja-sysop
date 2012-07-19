@@ -10,7 +10,7 @@ requires = [
     'pyramid',
     'pyramid_debugtoolbar',
     'repoze.who>=2.0',
-    'pyramid_who',
+    'pyramid_whoauth',
     'waitress',
     'deform',
     'deform_bootstrap',

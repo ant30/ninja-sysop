@@ -198,42 +198,42 @@ class GroupViews(Layouts):
         return {"groupname": groupname}
 
 
-    @view_config(renderer="templates/login.pt", context=HTTPForbidden)
-    @view_config(renderer="templates/login.pt", route_name="login")
-    def login(self):
-        request = self.request
-        login_url = request.resource_url(request.context, 'login')
-        referrer = request.url
-        if referrer == login_url:
-            referrer = '/' # never use the login form itself as came_from
-        came_from = request.params.get('came_from', referrer)
-        message = ''
-        login = ''
-        password = ''
-        if self.request.POST:
-            login = request.params['login']
-            password = request.params['password']
-            userdb = UserDB(self.settings['htpasswd'])
-            if userdb.check_password(login, password):
-                headers = remember(request, login)
-                return HTTPFound(location=came_from,
-                                 headers=headers)
-            message = 'Failed login'
-
-        return dict(
-            page_title="Login",
-            message=message,
-            url=request.application_url + '/login',
-            came_from=came_from,
-            login=login,
-            password=password,
-            )
-
-    @view_config(route_name="logout")
-    def logout(self):
-        headers = forget(self.request)
-        url = self.request.route_url('login')
-        return HTTPFound(location=url, headers=headers)
+#    @view_config(renderer="templates/login.pt", context=HTTPForbidden)
+#    @view_config(renderer="templates/login.pt", route_name="login")
+#    def login(self):
+#        request = self.request
+#        login_url = request.resource_url(request.context, 'login')
+#        referrer = request.url
+#        if referrer == login_url:
+#            referrer = '/' # never use the login form itself as came_from
+#        came_from = request.params.get('came_from', referrer)
+#        message = ''
+#        login = ''
+#        password = ''
+#        if self.request.POST:
+#            login = request.params['login']
+#            password = request.params['password']
+#            userdb = UserDB(self.settings['htpasswd'])
+#            if userdb.check_password(login, password):
+#                headers = remember(request, login)
+#                return HTTPFound(location=came_from,
+#                                 headers=headers)
+#            message = 'Failed login'
+#
+#        return dict(
+#            page_title="Login",
+#            message=message,
+#            url=request.application_url + '/login',
+#            came_from=came_from,
+#            login=login,
+#            password=password,
+#            )
+#
+#    @view_config(route_name="logout")
+#    def logout(self):
+#        headers = forget(self.request)
+#        url = self.request.route_url('login')
+#        return HTTPFound(location=url, headers=headers)
 
 
 class BaseRestView(object):
