@@ -30,7 +30,7 @@
 import re
 import subprocess
 import shutil
-from os import path
+from os import path, listdir
 
 import deform
 
@@ -51,9 +51,12 @@ RELOAD_COMMAND = "service nginx reload"
 
 
 class Site(object):
-    def __init__(self, name, type, target, ttl=0, comment=''):
+    def __init__(self, name, enabled, proxy_to='', ssl='', comment=''):
         self.name = name
         self.comment = comment or ''
+        self.enabled = enabled
+        self.proxy_to = proxy_to
+        self.ssl = ssl
 
     def __str__(self):
         return self.name
@@ -61,7 +64,12 @@ class Site(object):
     def todict(self):
         return dict(name = self.name,
                     comment = self.comment,
+                    enabled = self.enabled
                     )
+
+    def is_enabled(self, basedir):
+        return path.exists(self.filename(basedir) and
+               path.exists(self.filename_enable(basedir))
 
     def filename(self, basedir):
         filename = path.join(basedir, 'sites-available', name)
@@ -86,6 +94,9 @@ class SiteDirectory(object):
     def readfile(self):
         sites = {}
         # Change this to read sites-available directory
+        sitesdir = listdir(path.join(self.basedir, sites-available)
+        for sitefile in sitedir:
+            sitefile
         return sites
 
     def __str_site(self, site):
@@ -115,7 +126,7 @@ class NginxSites(Backend):
         super(NginxSites, self).__init__(name, filename)
         self.groupname = name
         self.sitedirectory = SiteDirectory(filename)
-        self.sites = self.zonefile.readfile()
+        self.sites = self.sitedirectory.readfile()
 
     def del_item(self, name):
         self.SiteDirectory.remove_site(name)
@@ -145,9 +156,9 @@ class NginxSites(Backend):
 
         if filters:
             return filter(lambda item: all([f(item) for f in filters]),
-                         self.items.values())
+                         self.sites.values())
         else:
-            return self.items.values()
+            return self.sites.values()
 
     def add_item(self, obj):
         site = Site(name=obj["name"],

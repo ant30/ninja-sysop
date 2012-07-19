@@ -36,17 +36,20 @@ from ninjasysop.validators import ip_validator
 
 
 class ProxySchema(colander.Schema):
-    proxy_to = colander.SchemaNode(colander.String())
+    proxy_to = colander.SchemaNode(colander.String(),
+                                    missing='')
     ssl = colander.SchemaNode(colander.Boolean(),
                               default=False,
-                              widget=deform.widget.CheckboxWidget())
+                              widget=deform.widget.CheckboxWidget(),
+                              missing=False)
 
 
 class FileSchema(colander.Schema):
     file = colander.SchemaNode(colander.String(),
-                        validator=colander.Length(max=6000),
-                        widget=deform.widget.TextAreaWidget(rows=50, cols=100),
-                        description='Enter some text')
+                        validator=colander.Length(max=-1),
+                        widget=deform.widget.TextAreaWidget(rows=30, cols=300),
+                        description='Enter some text',
+                        missing='')
 
 class SiteSchema(colander.TupleSchema):
     name = colander.SchemaNode(
