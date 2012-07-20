@@ -68,23 +68,21 @@ class Site(object):
                     )
 
     def is_enabled(self, basedir):
-        return path.exists(self.filename(basedir) and
-               path.exists(self.filename_enable(basedir))
+        return (path.exists(self.filename(basedir)) and
+               path.exists(self.filename_enable(basedir)))
 
     def filename(self, basedir):
-        filename = path.join(basedir, 'sites-available', name)
+        filename = path.join(basedir, 'sites-available', self.name)
         filename += '.conf'
         return filename
 
-
     def filename_enable(self, basedir):
-        filename = path.join(basedir, 'sites-enabled', name)
+        filename = path.join(basedir, 'sites-enabled', self.name)
         filename += '.conf'
         return filename
 
     def file(self, basedir, mode='r'):
         return open(self.filename(basedir), mode)
-
 
 
 class SiteDirectory(object):
@@ -94,8 +92,9 @@ class SiteDirectory(object):
     def readfile(self):
         sites = {}
         # Change this to read sites-available directory
-        sitesdir = listdir(path.join(self.basedir, sites-available)
+        sitedir = listdir(path.join(self.basedir, 'sites-available'))
         for sitefile in sitedir:
+            import ipdb; ipdb.set_trace()
             sitefile
         return sites
 
