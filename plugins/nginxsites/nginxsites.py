@@ -36,53 +36,74 @@ import deform
 
 from ninjasysop.backends import Backend, BackendApplyChangesException
 
-from forms import SiteSchema, SiteValidator
+from forms import SiteSchema, SiteValidator, CustomSiteSchema
 from texts import texts
 from datetime import datetime
 
 # SERIAL = yyyymmddnn ; serial
 PARSER_RE = {
-    'server_name':re.compile(r'server_name *(?P<server_name>\w+) *;'),
+    'server_name':re.compile(r'server_name *(?:(\w+)|(\w+ *,)+) *;'),
     'proxy_pass':re.compile(r'proxy_pass *(?P<proxy_pass>\w+) *;'),
+    'proxy_type':re.compile(r'^# ninjasysop-nginxsites PROXY_PASS$'),
 }
 
 RELOAD_COMMAND = "service nginx reload"
 
 
 
-class Site(object):
-    def __init__(self, name, enabled, proxy_to='', ssl='', comment=''):
+class BaseSite(object):
+    def __init__(self, name, basedir):
         self.name = name
-        self.comment = comment or ''
-        self.enabled = enabled
-        self.proxy_to = proxy_to
-        self.ssl = ssl
+        self.basedir = basedir
+        self.filename = path.join(basedir, 'sites-available', name)
+        self.filename_enabled = path.join(basedir, 'sites-enabled', name)
+        self.enabled = (path.exists(self.filename) and
+                           path.exists(self.filename_enabled))
 
-    def __str__(self):
-        return self.name
+    def open_file(self, mode='r'):
+        return open(self.filename, mode)
 
     def todict(self):
         return dict(name = self.name,
-                    comment = self.comment,
                     enabled = self.enabled
                     )
 
-    def is_enabled(self, basedir):
-        return (path.exists(self.filename(basedir)) and
-               path.exists(self.filename_enable(basedir)))
 
-    def filename(self, basedir):
-        filename = path.join(basedir, 'sites-available', self.name)
-        filename += '.conf'
-        return filename
+class CustomSite(BaseSite):
+    def __init__(self, **kwargs):
+        super(CustomSite, self).__init__(kwargs['name'],
+                                        kwargs['basedir'])
+        self.type = 'custom'
 
-    def filename_enable(self, basedir):
-        filename = path.join(basedir, 'sites-enabled', self.name)
-        filename += '.conf'
-        return filename
+    def todict(self):
+        tdict = super(CustomSite, self).todict()
+        with self.open_file('r') as file:
+            tdict['content'] = file.read()
+        return tdict
 
-    def file(self, basedir, mode='r'):
-        return open(self.filename(basedir), mode)
+
+class ProxySite(BaseSite):
+    def __init__(self, **kwargs):
+        super(ProxySite, self).__init__(kwargs['name'],
+                                        kwargs['basedir'])
+        self.type = 'proxy'
+
+        # Kwargs or Parse file
+        self.ssl = False
+        self.server_name = 'algo'
+        self.other_names = ['otros']
+        self.proxy_to = 'http://192.168.10.10:8080'
+        self.proxy_set_header = []
+
+    def todict(self):
+        tdict = super(ProxySite, self).todict()
+        tdict['type'] = self.type
+        tdict['ssl'] = self.ssl
+        tdict['server_name'] = self.server_name
+        tdict['other_names'] = self.other_names
+        tdict['proxy_to'] = self.proxy_to
+        tdict['proxy_set_header'] = self.proxy_set_header
+        return tdict
 
 
 class SiteDirectory(object):
@@ -94,8 +115,8 @@ class SiteDirectory(object):
         # Change this to read sites-available directory
         sitedir = listdir(path.join(self.basedir, 'sites-available'))
         for sitefile in sitedir:
-            import ipdb; ipdb.set_trace()
-            sitefile
+            sites[sitefile] = CustomSite(name=sitefile,
+                                         basedir=self.basedir)
         return sites
 
     def __str_site(self, site):
@@ -121,10 +142,11 @@ class SiteDirectory(object):
 
 
 class NginxSites(Backend):
-    def __init__(self, name, filename):
-        super(NginxSites, self).__init__(name, filename)
+    def __init__(self, name, basedir):
+        super(NginxSites, self).__init__(name, basedir)
         self.groupname = name
-        self.sitedirectory = SiteDirectory(filename)
+        self.basedir = basedir
+        self.sitedirectory = SiteDirectory(basedir)
         self.sites = self.sitedirectory.readfile()
 
     def del_item(self, name):
@@ -188,22 +210,22 @@ class NginxSites(Backend):
             raise BackendApplyChangesException(e.output)
 
     def get_edit_schema(self, name):
-        return SiteSchema(validator=SiteValidator(self))
+        return CustomSiteSchema(validator=SiteValidator(self))
 
     def get_add_schema(self):
-        schema = SiteSchema(validator=SiteValidator(self))
+        schema = CustomSiteSchema(validator=SiteValidator(self))
         for field in schema.children:
             if field.name == 'name':
                 field.widget = deform.widget.TextInputWidget()
-        return SiteSchema(validator=SiteValidator(self))
+        return CustomSiteSchema(validator=SiteValidator(self))
 
     @classmethod
     def get_edit_schema_definition(self):
-        return SiteSchema
+        return CustomSiteSchema
 
     @classmethod
     def get_add_schema_definition(self):
-        return SiteSchema
+        return CustomSiteSchema
 
     @classmethod
     def get_texts(self):

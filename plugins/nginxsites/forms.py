@@ -62,6 +62,20 @@ class SiteSchema(colander.TupleSchema):
     file = FileSchema()
 
 
+class CustomSiteSchema(colander.Schema):
+    name = colander.SchemaNode(
+                colander.String(),
+                widget = deform.widget.HiddenWidget(),
+                )
+
+    content = colander.SchemaNode(colander.String(),
+                        validator=colander.Length(max=-1),
+                        widget=deform.widget.TextAreaWidget(rows=30, cols=300),
+                        description='Config file content',
+                        missing='')
+
+
+
 class SiteValidator:
 
     def __init__(self, group, new=False):

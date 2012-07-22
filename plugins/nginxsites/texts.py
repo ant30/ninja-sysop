@@ -32,5 +32,6 @@ texts=dict(
     group_label = u'Sites',
     item_label = u'Site',
     item_list_extra_fields = (('type', u'File type'),
+                              ('enabled',u'Enabled'),
                              )
 )
