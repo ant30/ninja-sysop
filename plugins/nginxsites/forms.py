@@ -44,36 +44,23 @@ class ProxySchema(colander.Schema):
                               missing=False)
 
 
-class FileSchema(colander.Schema):
-    file = colander.SchemaNode(colander.String(),
-                        validator=colander.Length(max=-1),
-                        widget=deform.widget.TextAreaWidget(rows=30, cols=300),
-                        description='Enter some text',
-                        missing='')
-
-class SiteSchema(colander.TupleSchema):
-    name = colander.SchemaNode(
-                colander.String(),
-                widget = deform.widget.HiddenWidget(),
-                )
-    comment = colander.SchemaNode(colander.String(),
-                                  missing=unicode(""))
-    proxy = ProxySchema()
-    file = FileSchema()
-
-
 class CustomSiteSchema(colander.Schema):
-    name = colander.SchemaNode(
-                colander.String(),
-                widget = deform.widget.HiddenWidget(),
-                )
-
     content = colander.SchemaNode(colander.String(),
-                        validator=colander.Length(max=-1),
                         widget=deform.widget.TextAreaWidget(rows=30, cols=300),
                         description='Config file content',
                         missing='')
 
+
+class SiteSchema(colander.MappingSchema):
+    name = colander.SchemaNode(
+                colander.String(),
+                widget = deform.widget.HiddenWidget(),
+                )
+    enabled = colander.SchemaNode(colander.Boolean(),
+                                  default=False)
+    comment = colander.SchemaNode(colander.String(),
+                                  missing=unicode(""))
+    customsite = CustomSiteSchema()
 
 
 class SiteValidator:

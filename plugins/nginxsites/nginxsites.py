@@ -36,7 +36,7 @@ import deform
 
 from ninjasysop.backends import Backend, BackendApplyChangesException
 
-from forms import SiteSchema, SiteValidator, CustomSiteSchema
+from forms import SiteSchema, SiteValidator
 from texts import texts
 from datetime import datetime
 
@@ -60,26 +60,40 @@ class BaseSite(object):
         self.enabled = (path.exists(self.filename) and
                            path.exists(self.filename_enabled))
 
+
+    def get_content(self):
+        return open(self.filename, 'r').read()
+
+
     def open_file(self, mode='r'):
         return open(self.filename, mode)
 
     def todict(self):
         return dict(name = self.name,
-                    enabled = self.enabled
+                    enabled = self.enabled,
+                    comment = ''
                     )
 
 
 class CustomSite(BaseSite):
     def __init__(self, **kwargs):
         super(CustomSite, self).__init__(kwargs['name'],
-                                        kwargs['basedir'])
+                                         kwargs['basedir'])
         self.type = 'custom'
+        if 'content' in kwargs:
+            self.content = kwargs['content']
+        else:
+            self.content = ''
+
+    def get_content(self):
+        return self.content
 
     def todict(self):
-        tdict = super(CustomSite, self).todict()
+        basedict = super(CustomSite, self).todict()
+        basedict['customsite'] = dict()
         with self.open_file('r') as file:
-            tdict['content'] = file.read()
-        return tdict
+            basedict['customsite']['content'] = file.read()
+        return basedict
 
 
 class ProxySite(BaseSite):
@@ -123,17 +137,13 @@ class SiteDirectory(object):
         site = site.name
 
     def add_site(self, site):
-        with site.file(self.basedir, 'r') as sitefile:
-            lines = sitefile.readlines()
-
-        with site.file(self.basedir, 'w') as sitefile:
-            sitefile.writelines(lines)
+        with site.open_file('w') as sitefile:
+            sitefile.write(site.get_content())
 
     def save_site(self, old_site, site):
         # TODO write site
-        return 
-        with site.file(self.basedir, 'w') as sitefile:
-            sitefile.writelines(lines)
+        with site.open_file('w') as sitefile:
+            sitefile.write(site.get_content())
 
     def remove_site(self, site):
         sitefile = site.filename(self.basedir)
@@ -156,8 +166,7 @@ class NginxSites(Backend):
     def get_item(self, name):
         return self.sites[name]
 
-    def get_items(self, name=None, servername=None, roxy_to=None,
-                    name_exact=None):
+    def get_items(self, name=None, servername=None, name_exact=None):
         filters = []
 
         if name:
@@ -181,19 +190,22 @@ class NginxSites(Backend):
         else:
             return self.sites.values()
 
-    def add_item(self, obj):
-        site = Site(name=obj["name"],
-                      comment=obj["comment"])
+    def add_item(self, data):
+        site = CustomSite(name=data["name"],
+                          basedir=self.basedir,
+                          enabled=data["enabled"],
+                          content=data["customsite"]["content"])
         self.sitedirectory.add_site(site)
-        self.items[str(site)] = site
+        self.sites[str(site)] = site
 
     def save_item(self, old_site, data):
+        site = CustomSite(name=data["name"],
+                          basedir=self.basedir,
+                          enabled=data["enabled"],
+                          content=data["customsite"]["content"])
 
-        site = Site(name=data["name"],
-                     comment=data["comment"])
-
-        self.sitedirectory.save_record(old_site, site)
-        self.items[str(site)] = site
+        self.sitedirectory.save_site(old_site, site)
+        self.sites[str(site)] = site
 
     def freeze_file(self, username):
         # generate a copy of actual file with username.serial extension
@@ -210,22 +222,22 @@ class NginxSites(Backend):
             raise BackendApplyChangesException(e.output)
 
     def get_edit_schema(self, name):
-        return CustomSiteSchema(validator=SiteValidator(self))
+        return SiteSchema(validator=SiteValidator(self))
 
     def get_add_schema(self):
-        schema = CustomSiteSchema(validator=SiteValidator(self))
+        schema = SiteSchema(validator=SiteValidator(self))
         for field in schema.children:
             if field.name == 'name':
                 field.widget = deform.widget.TextInputWidget()
-        return CustomSiteSchema(validator=SiteValidator(self))
+        return SiteSchema(validator=SiteValidator(self))
 
     @classmethod
     def get_edit_schema_definition(self):
-        return CustomSiteSchema
+        return SiteSchema
 
     @classmethod
     def get_add_schema_definition(self):
-        return CustomSiteSchema
+        return SiteSchema
 
     @classmethod
     def get_texts(self):
