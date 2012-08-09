@@ -2,7 +2,7 @@
 # Copyright (c) <2012> Antonio Pérez-Aranda Alcaide (ant30) <ant30tx@gmail.com>
 #                      Antonio Pérez-Aranda Alcaide (Yaco Sistemas SL) <aperezaranda@yaco.es>
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -14,7 +14,7 @@
 # 3. Neither the name of copyright holders nor the names of its
 #    contributors may be used to endorse or promote products derived
 #    from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 # TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -26,13 +26,9 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-# 
-import re
-
+#
 import colander
 import deform
-
-from ninjasysop.validators import ip_validator
 
 
 class ProxySchema(colander.Schema):
@@ -45,8 +41,10 @@ class ProxySchema(colander.Schema):
 
 
 class CustomSiteSchema(colander.Schema):
-    content = colander.SchemaNode(colander.String(),
-                        widget=deform.widget.TextAreaWidget(rows=30, cols=300),
+     content = colander.SchemaNode(colander.String(),
+                        widget=deform.widget.TextAreaWidget(
+                                rows=15,
+                                css_class="span6"),
                         description='Config file content',
                         missing='')
 
